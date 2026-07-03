@@ -18,18 +18,139 @@
             padding: 20px;
         }
 
+        /* TOOLBAR MINIMIZABLE */
+        .toolbar-container {
+            position: sticky;
+            top: 10px;
+            z-index: 100;
+            transition: all 0.3s ease;
+            margin-bottom: 20px;
+        }
+
         .toolbar {
             background: white;
-            padding: 20px;
             border-radius: 16px;
             box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
-            margin-bottom: 25px;
             text-align: center;
-            position: sticky;
-            top: 20px;
-            z-index: 100;
             backdrop-filter: blur(10px);
             border: 1px solid rgba(255, 255, 255, 0.3);
+            transition: all 0.3s ease;
+            overflow: hidden;
+        }
+
+        .toolbar.maximized {
+            padding: 20px;
+        }
+
+        .toolbar.minimized {
+            padding: 8px 15px;
+            border-radius: 50px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 15px;
+        }
+
+        .toolbar-toggle {
+            position: absolute;
+            top: 5px;
+            right: 15px;
+            background: #667eea;
+            color: white;
+            border: none;
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            cursor: pointer;
+            font-size: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s ease;
+            z-index: 10;
+            line-height: 1;
+        }
+
+        .toolbar.minimized .toolbar-toggle {
+            position: static;
+            order: 3;
+        }
+
+        .toolbar-toggle:hover {
+            background: #5a67d8;
+            transform: rotate(180deg);
+        }
+
+        .toolbar-content {
+            transition: all 0.3s ease;
+        }
+
+        .toolbar.minimized .toolbar-content {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            flex: 1;
+            flex-wrap: nowrap;
+        }
+
+        .toolbar.minimized .upload-section {
+            flex-direction: row;
+            gap: 10px;
+            margin-bottom: 0;
+        }
+
+        .toolbar.minimized .custom-file-upload {
+            padding: 8px 16px;
+            font-size: 13px;
+        }
+
+        .toolbar.minimized .author-container {
+            padding: 5px 12px;
+            font-size: 12px;
+        }
+
+        .toolbar.minimized .author-container input {
+            width: 100px;
+            font-size: 12px;
+        }
+
+        .toolbar.minimized .page-controls {
+            padding: 5px 15px;
+            gap: 10px;
+            margin: 0;
+        }
+
+        .toolbar.minimized .page-controls span {
+            font-size: 12px;
+            min-width: auto;
+        }
+
+        .toolbar.minimized .nav-btn {
+            padding: 6px 10px;
+            font-size: 12px;
+        }
+
+        .toolbar.minimized button.action-btn,
+        .toolbar.minimized button.save-btn {
+            padding: 8px 14px;
+            font-size: 12px;
+            margin: 0;
+        }
+
+        .toolbar.minimized .file-name {
+            display: none;
+        }
+
+        .toolbar.minimized .hint-toolbar {
+            display: none;
+        }
+
+        .toolbar-section {
+            margin-bottom: 15px;
+        }
+
+        .toolbar.minimized .toolbar-section {
+            margin-bottom: 0;
         }
 
         .upload-section {
@@ -37,7 +158,6 @@
             flex-direction: column;
             align-items: center;
             gap: 15px;
-            margin-bottom: 20px;
         }
 
         .custom-file-upload {
@@ -54,6 +174,7 @@
             box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
             transition: all 0.3s ease;
             letter-spacing: 0.5px;
+            white-space: nowrap;
         }
 
         .custom-file-upload:hover {
@@ -73,7 +194,6 @@
             display: inline-flex;
             align-items: center;
             gap: 20px;
-            margin: 10px 20px;
             background: #f8f9fa;
             padding: 10px 25px;
             border-radius: 50px;
@@ -135,6 +255,7 @@
             transition: all 0.3s ease;
             font-size: 14px;
             letter-spacing: 0.5px;
+            white-space: nowrap;
         }
 
         .nav-btn {
@@ -160,6 +281,20 @@
         button.action-btn:hover {
             transform: translateY(-2px);
             box-shadow: 0 6px 20px rgba(245, 87, 108, 0.5);
+        }
+
+        button.delete-text-btn {
+            background: linear-gradient(135deg, #ff6b6b 0%, #ee5a24 100%);
+            color: white;
+            font-size: 15px;
+            padding: 12px 24px;
+            box-shadow: 0 4px 15px rgba(238, 90, 36, 0.3);
+            margin-left: 10px;
+        }
+
+        button.delete-text-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(238, 90, 36, 0.5);
         }
 
         button.save-btn {
@@ -193,23 +328,13 @@
         }
 
         @keyframes fadeIn {
-            from {
-                opacity: 0;
-            }
-            to {
-                opacity: 1;
-            }
+            from { opacity: 0; }
+            to { opacity: 1; }
         }
 
         @keyframes slideUp {
-            from {
-                transform: translateY(30px);
-                opacity: 0;
-            }
-            to {
-                transform: translateY(0);
-                opacity: 1;
-            }
+            from { transform: translateY(30px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
         }
 
         .modal-content {
@@ -378,6 +503,19 @@
             box-shadow: 0 6px 20px rgba(67, 233, 123, 0.4);
         }
 
+        .btn-delete-text {
+            background: linear-gradient(135deg, #ff6b6b 0%, #ee5a24 100%);
+            color: white;
+            padding: 12px 24px;
+            border-radius: 50px;
+            font-weight: 600;
+        }
+
+        .btn-delete-text:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(238, 90, 36, 0.4);
+        }
+
         /* WIDGET FLOTANTE DE NOTAS */
         .notes-widget {
             position: fixed;
@@ -403,15 +541,9 @@
         }
 
         @keyframes pulse {
-            0% {
-                box-shadow: 0 0 0 0 rgba(245, 87, 108, 0.4);
-            }
-            70% {
-                box-shadow: 0 0 0 15px rgba(245, 87, 108, 0);
-            }
-            100% {
-                box-shadow: 0 0 0 0 rgba(245, 87, 108, 0);
-            }
+            0% { box-shadow: 0 0 0 0 rgba(245, 87, 108, 0.4); }
+            70% { box-shadow: 0 0 0 15px rgba(245, 87, 108, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(245, 87, 108, 0); }
         }
 
         .notes-widget.minimized:hover {
@@ -554,27 +686,41 @@
         }
 
         .new-text-label {
-            color: #28a745;
-            font-weight: 600;
+            color: #1a6b2a;
+            font-weight: 700;
             font-size: 13px;
             position: absolute;
             top: -20px;
             left: 0;
-            background: white;
-            padding: 3px 8px;
+            background: rgba(255, 255, 255, 0.9);
+            padding: 4px 10px;
             border: 2px solid #28a745;
             border-radius: 6px;
             white-space: nowrap;
             cursor: pointer;
             transition: all 0.3s ease;
-            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+            backdrop-filter: blur(5px);
+            z-index: 5;
+        }
+
+        .new-text-label.deleted-text {
+            border-color: #dc3545;
+            color: #dc3545;
+            font-style: italic;
+            text-decoration: line-through;
         }
 
         .new-text-label:hover {
-            background: #d4edda;
+            background: rgba(212, 237, 218, 0.95);
             border-color: #1e7e34;
             transform: translateY(-1px);
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+        }
+
+        .new-text-label.deleted-text:hover {
+            background: rgba(248, 215, 218, 0.95);
+            border-color: #c82333;
         }
 
         .delete-btn {
@@ -595,6 +741,7 @@
             padding: 0;
             box-shadow: 0 2px 8px rgba(220, 53, 69, 0.3);
             transition: all 0.3s ease;
+            z-index: 6;
         }
 
         .delete-btn:hover {
@@ -624,11 +771,37 @@
             color: #f093fb;
         }
 
+        .hint-toolbar {
+            font-size: 12px;
+            color: #6c757d;
+            margin-top: 8px;
+        }
+
         .file-name {
             color: #6c757d;
             font-size: 13px;
             margin-top: 5px;
             font-style: italic;
+        }
+
+        /* Estilos para el fondo semitransparente en el PDF */
+        .pdf-white-bg {
+            background: rgba(255, 255, 255, 0.92) !important;
+            padding: 2px 6px !important;
+            border-radius: 3px !important;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1) !important;
+        }
+
+        @media (max-width: 768px) {
+            .toolbar.minimized {
+                flex-wrap: wrap;
+                gap: 8px;
+            }
+            
+            .toolbar.minimized .toolbar-content {
+                flex-wrap: wrap;
+                gap: 8px;
+            }
         }
     </style>
 
@@ -640,35 +813,53 @@
 
 <body>
 
-    <div class="toolbar">
-        <div class="upload-section">
-            <label for="upload" class="custom-file-upload">
-                📂 Seleccionar Archivo PDF
-            </label>
-            <input type="file" id="upload" accept="application/pdf" />
-            <div id="fileNameDisplay" class="file-name"></div>
+    <div class="toolbar-container" id="toolbarContainer">
+        <div class="toolbar maximized" id="mainToolbar">
+            <button class="toolbar-toggle" id="toolbarToggle" title="Minimizar/Maximizar barra">
+                ▲
+            </button>
+            <div class="toolbar-content">
+                <div class="toolbar-section">
+                    <div class="upload-section">
+                        <label for="upload" class="custom-file-upload">
+                            📂 Seleccionar PDF
+                        </label>
+                        <input type="file" id="upload" accept="application/pdf" />
+                        <div id="fileNameDisplay" class="file-name"></div>
 
-            <div class="author-container">
-                <label for="txtElaborado">👤 Autor:</label>
-                <input type="text" id="txtElaborado" placeholder="Nombre del autor..." />
+                        <div class="author-container">
+                            <label for="txtElaborado">👤 Autor:</label>
+                            <input type="text" id="txtElaborado" placeholder="Nombre del autor..." />
+                        </div>
+                    </div>
+                </div>
+
+                <div class="toolbar-section">
+                    <div class="page-controls">
+                        <button class="nav-btn" id="prev" onclick="onPrevPage()">◀</button>
+                        <span>📄 <span id="page_num">0</span> / <span id="page_count">0</span></span>
+                        <button class="nav-btn" id="next" onclick="onNextPage()">▶</button>
+                    </div>
+                </div>
+
+                <div class="toolbar-section">
+                    <button class="action-btn" onmousedown="event.preventDefault(); aplicarCorreccion()">📝 Reemplazar</button>
+                    <button class="delete-text-btn" onmousedown="event.preventDefault(); marcarParaBorrar()">🗑️ Borrar texto</button>
+                    <button class="save-btn" id="btnGuardar" onclick="guardarPDFEnPC()" style="display: none;">💾 Guardar</button>
+                </div>
+                
+                <div class="hint-toolbar">
+                    💡 <strong>Tip:</strong> Selecciona texto y usa <strong>Supr</strong>, <strong>Reemplazar</strong> o <strong>Borrar texto</strong>
+                </div>
             </div>
         </div>
-
-        <div class="page-controls">
-            <button class="nav-btn" id="prev" onclick="onPrevPage()">◀ Anterior</button>
-            <span>📄 Página: <span id="page_num">0</span> / <span id="page_count">0</span></span>
-            <button class="nav-btn" id="next" onclick="onNextPage()">Siguiente ▶</button>
-        </div>
-
-        <button class="action-btn" onmousedown="event.preventDefault(); aplicarCorreccion()">📝 Reemplazar Texto</button>
-        <button class="save-btn" id="btnGuardar" onclick="guardarPDFEnPC()" style="display: none;">💾 Guardar Documento</button>
     </div>
 
     <!-- MODAL DE REEMPLAZO DE TEXTO -->
     <div class="modal-overlay" id="replacementModal">
         <div class="modal-content">
             <div class="modal-header">
-                <h3>✏️ Reemplazar Texto</h3>
+                <h3 id="modalTitle">✏️ Reemplazar Texto</h3>
                 <button class="close-modal" id="closeModalBtn">&times;</button>
             </div>
             <div class="modal-body">
@@ -677,15 +868,16 @@
                         <label>❌ Texto Original Seleccionado:</label>
                         <div class="text-display" id="originalTextDisplay"></div>
                     </div>
-                    <div class="text-box replacement">
+                    <div class="text-box replacement" id="replacementBox">
                         <label>✅ Nuevo Texto Sugerido:</label>
                         <input type="text" class="replacement-input" id="replacementTextInput"
                         placeholder="Escribe el texto de reemplazo aquí...">
                     </div>
                 </div>
             </div>
-            <div class="modal-footer">
+            <div class="modal-footer" id="modalFooter">
                 <button class="btn-cancel" id="cancelReplacementBtn">Cancelar</button>
+                <button class="btn-delete-text" id="deleteTextBtn" style="display:none;">🗑️ Marcar para borrar</button>
                 <button class="btn-apply" id="applyReplacementBtn">✓ Aplicar Cambio</button>
             </div>
         </div>
@@ -709,7 +901,7 @@
             <div id="annotations-layer"></div>
         </div>
     </div>
-    <div class="hint">💡 <strong>Tip:</strong> Sombrea el texto y presiona <strong>BORRAR o SUPRIMIR</strong> para corregir. <strong>Haz clic en el texto verde para editarlo.</strong></div>
+    <div class="hint">💡 <strong>Tip:</strong> Sombrea el texto y presiona <strong>BORRAR o SUPRIMIR</strong> para reemplazar. <strong>Haz clic en el texto verde para editarlo.</strong></div>
 
     <script>
         pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.worker.min.js';
@@ -730,13 +922,18 @@
 
         // Elementos del modal
         const modalOverlay = document.getElementById('replacementModal');
+        const modalTitle = document.getElementById('modalTitle');
         const originalTextDisplay = document.getElementById('originalTextDisplay');
         const replacementTextInput = document.getElementById('replacementTextInput');
+        const replacementBox = document.getElementById('replacementBox');
         const closeModalBtn = document.getElementById('closeModalBtn');
         const cancelReplacementBtn = document.getElementById('cancelReplacementBtn');
         const applyReplacementBtn = document.getElementById('applyReplacementBtn');
+        const deleteTextBtn = document.getElementById('deleteTextBtn');
+        const modalFooter = document.getElementById('modalFooter');
 
-        let pendingCorrection = null; // Almacena los datos de la corrección pendiente
+        let pendingCorrection = null;
+        let modalMode = 'replace'; // 'replace' o 'delete'
 
         const notesWidget = document.getElementById('seccionNotas');
         const notesIcon = document.getElementById('notesIcon');
@@ -744,10 +941,63 @@
         const txtNotasAdicionales = document.getElementById('txtNotasAdicionales');
         const txtElaborado = document.getElementById('txtElaborado');
 
+        // Toolbar minimize/maximize
+        const mainToolbar = document.getElementById('mainToolbar');
+        const toolbarToggle = document.getElementById('toolbarToggle');
+        let isToolbarMinimized = false;
+
+        toolbarToggle.addEventListener('click', function() {
+            isToolbarMinimized = !isToolbarMinimized;
+            if (isToolbarMinimized) {
+                mainToolbar.classList.remove('maximized');
+                mainToolbar.classList.add('minimized');
+                toolbarToggle.textContent = '▼';
+                toolbarToggle.title = 'Maximizar barra';
+            } else {
+                mainToolbar.classList.remove('minimized');
+                mainToolbar.classList.add('maximized');
+                toolbarToggle.textContent = '▲';
+                toolbarToggle.title = 'Minimizar barra';
+            }
+        });
+
+        // Auto-minimizar al hacer scroll
+        let lastScrollTop = 0;
+        window.addEventListener('scroll', function() {
+            const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
+            if (scrollTop > 100 && !isToolbarMinimized) {
+                isToolbarMinimized = true;
+                mainToolbar.classList.remove('maximized');
+                mainToolbar.classList.add('minimized');
+                toolbarToggle.textContent = '▼';
+                toolbarToggle.title = 'Maximizar barra';
+            }
+            lastScrollTop = scrollTop;
+        });
+
         // Funciones del modal
-        function showReplacementModal(textoSeleccionado, correctionData) {
+        function showReplacementModal(textoSeleccionado, correctionData, mode = 'replace') {
+            modalMode = mode;
             originalTextDisplay.textContent = textoSeleccionado;
-            replacementTextInput.value = '';
+            
+            if (mode === 'replace') {
+                modalTitle.textContent = '✏️ Reemplazar Texto';
+                replacementTextInput.value = '';
+                replacementTextInput.placeholder = 'Escribe el texto de reemplazo aquí...';
+                replacementBox.style.display = 'block';
+                replacementTextInput.style.display = 'block';
+                deleteTextBtn.style.display = 'none';
+                applyReplacementBtn.textContent = '✓ Aplicar Cambio';
+                applyReplacementBtn.style.display = 'inline-block';
+            } else if (mode === 'delete') {
+                modalTitle.textContent = '🗑️ Marcar Texto para Borrar';
+                replacementBox.style.display = 'none';
+                replacementTextInput.style.display = 'none';
+                deleteTextBtn.style.display = 'inline-block';
+                applyReplacementBtn.textContent = '✓ Confirmar Borrado';
+                applyReplacementBtn.style.display = 'inline-block';
+            }
+            
             replacementTextInput.focus();
             pendingCorrection = correctionData;
             modalOverlay.style.display = 'flex';
@@ -757,16 +1007,57 @@
             modalOverlay.style.display = 'none';
             pendingCorrection = null;
             replacementTextInput.value = '';
+            modalMode = 'replace';
         }
 
         function applyReplacementFromModal() {
-            const textoNuevo = replacementTextInput.value.trim();
-            if (!textoNuevo || !pendingCorrection) {
-                alert("⚠️ Por favor, escribe el texto de reemplazo.");
-                return;
-            }
+            if (modalMode === 'replace') {
+                const textoNuevo = replacementTextInput.value.trim();
+                if (!textoNuevo || !pendingCorrection) {
+                    alert("⚠️ Por favor, escribe el texto de reemplazo.");
+                    return;
+                }
 
-            const { x, y, width, height } = pendingCorrection;
+                const { x, y, width, height } = pendingCorrection;
+
+                if (!annotationsData[pageNum]) annotationsData[pageNum] = [];
+                annotationsData[pageNum].push({
+                    id: Date.now(),
+                    x,
+                    y,
+                    width,
+                    height,
+                    newText: textoNuevo,
+                    type: 'replace'
+                });
+
+                restaurarAnotaciones(pageNum);
+            } else if (modalMode === 'delete') {
+                if (!pendingCorrection) return;
+
+                const { x, y, width, height, textoSeleccionado } = pendingCorrection;
+
+                if (!annotationsData[pageNum]) annotationsData[pageNum] = [];
+                annotationsData[pageNum].push({
+                    id: Date.now(),
+                    x,
+                    y,
+                    width,
+                    height,
+                    newText: textoSeleccionado,
+                    type: 'delete'
+                });
+
+                restaurarAnotaciones(pageNum);
+            }
+            
+            hideReplacementModal();
+        }
+
+        function deleteTextFromModal() {
+            if (!pendingCorrection) return;
+            
+            const { x, y, width, height, textoSeleccionado } = pendingCorrection;
 
             if (!annotationsData[pageNum]) annotationsData[pageNum] = [];
             annotationsData[pageNum].push({
@@ -775,7 +1066,8 @@
                 y,
                 width,
                 height,
-                newText: textoNuevo
+                newText: textoSeleccionado,
+                type: 'delete'
             });
 
             restaurarAnotaciones(pageNum);
@@ -786,6 +1078,7 @@
         closeModalBtn.addEventListener('click', hideReplacementModal);
         cancelReplacementBtn.addEventListener('click', hideReplacementModal);
         applyReplacementBtn.addEventListener('click', applyReplacementFromModal);
+        deleteTextBtn.addEventListener('click', deleteTextFromModal);
 
         replacementTextInput.addEventListener('keydown', function(e) {
             if (e.key === 'Enter') {
@@ -915,8 +1208,30 @@
 
             selection.removeAllRanges();
 
-            // Mostrar el modal en lugar del prompt
-            showReplacementModal(textoSeleccionado, { x, y, width, height });
+            showReplacementModal(textoSeleccionado, { x, y, width, height, textoSeleccionado }, 'replace');
+        }
+
+        function marcarParaBorrar() {
+            const selection = window.getSelection();
+            const textoSeleccionado = selection.toString().trim();
+
+            if (!textoSeleccionado) {
+                alert("⚠️ No has seleccionado nada. Por favor, sombrea una palabra en el PDF primero.");
+                return;
+            }
+
+            const range = selection.getRangeAt(0);
+            const rect = range.getBoundingClientRect();
+            const viewerRect = annotationsLayer.getBoundingClientRect();
+
+            const x = rect.left - viewerRect.left;
+            const y = rect.top - viewerRect.top;
+            const width = rect.width;
+            const height = rect.height;
+
+            selection.removeAllRanges();
+
+            showReplacementModal(textoSeleccionado, { x, y, width, height, textoSeleccionado }, 'delete');
         }
 
         document.addEventListener('keydown', function(e) {
@@ -936,20 +1251,39 @@
             const marca = annotationsData[num].find(m => m.id === id);
             if (!marca) return;
 
-            // También usamos el modal para editar
-            originalTextDisplay.textContent = "Texto actual: " + marca.newText;
-            replacementTextInput.value = marca.newText;
+            if (marca.type === 'delete') {
+                if (confirm('¿Deseas convertir esta marca de borrado en un reemplazo?')) {
+                    marca.type = 'replace';
+                    originalTextDisplay.textContent = "Texto marcado para borrar: " + marca.newText;
+                    replacementTextInput.value = '';
+                    replacementTextInput.placeholder = 'Escribe el nuevo texto...';
+                } else {
+                    return;
+                }
+            } else {
+                originalTextDisplay.textContent = "Texto actual: " + marca.newText;
+                replacementTextInput.value = marca.newText;
+            }
+            
+            modalMode = 'replace';
+            modalTitle.textContent = '✏️ Editar Texto';
+            replacementBox.style.display = 'block';
+            replacementTextInput.style.display = 'block';
+            deleteTextBtn.style.display = 'none';
+            applyReplacementBtn.textContent = '✓ Actualizar';
+            applyReplacementBtn.style.display = 'inline-block';
+            
             pendingCorrection = { id, num, isEdit: true, oldMarca: marca };
             modalOverlay.style.display = 'flex';
             replacementTextInput.focus();
             replacementTextInput.select();
 
-            // Sobrescribir temporalmente el apply para manejar edición
             const originalApplyFn = applyReplacementBtn.onclick;
             applyReplacementBtn.onclick = function() {
                 const textoModificado = replacementTextInput.value.trim();
                 if (textoModificado) {
                     marca.newText = textoModificado;
+                    marca.type = 'replace';
                     restaurarAnotaciones(num);
                 }
                 hideReplacementModal();
@@ -968,11 +1302,19 @@
                 div.style.width = marca.width + 'px';
                 div.style.height = marca.height + 'px';
 
-                div.innerHTML = `
-                    <div class="strike-line"></div>
-                    <div class="new-text-label" title="Haz clic para editar este texto" onclick="editarAnotacion(${marca.id}, ${num})">${marca.newText}</div>
-                    <button class="delete-btn" title="Eliminar corrección" onclick="borrarAnotacion(${marca.id}, ${num})">✕</button>
-                `;
+                if (marca.type === 'delete') {
+                    div.innerHTML = `
+                        <div class="strike-line"></div>
+                        <div class="new-text-label deleted-text" title="Texto marcado para borrar. Haz clic para editar." onclick="editarAnotacion(${marca.id}, ${num})">🗑️ ${marca.newText}</div>
+                        <button class="delete-btn" title="Eliminar marca" onclick="borrarAnotacion(${marca.id}, ${num})">✕</button>
+                    `;
+                } else {
+                    div.innerHTML = `
+                        <div class="strike-line"></div>
+                        <div class="new-text-label" title="Haz clic para editar este texto" onclick="editarAnotacion(${marca.id}, ${num})">${marca.newText}</div>
+                        <button class="delete-btn" title="Eliminar corrección" onclick="borrarAnotacion(${marca.id}, ${num})">✕</button>
+                    `;
+                }
                 annotationsLayer.appendChild(div);
             });
         }
@@ -1040,9 +1382,11 @@
                     annotationsData[numPagina].forEach(marca => {
                         const xReal = marca.x / scale;
                         const anchoReal = marca.width / scale;
+                        const alturaReal = marca.height / scale;
                         const yWebCentro = (marca.y + (marca.height / 2)) / scale;
                         const yReal = alturaRealDeLaPagina - yWebCentro;
 
+                        // Dibujar línea de tachado
                         paginaAEditar.drawLine({
                             start: { x: xReal, y: yReal },
                             end: { x: xReal + anchoReal, y: yReal },
@@ -1050,12 +1394,53 @@
                             color: rgb(1, 0, 0),
                         });
 
-                        paginaAEditar.drawText(marca.newText, {
-                            x: xReal,
-                            y: yReal + 5,
-                            size: 9,
-                            color: rgb(0, 0.5, 0),
-                        });
+                        if (marca.type === 'delete') {
+                            // Para borrado, solo dibujar el texto tachado con fondo semitransparente
+                            const textWidth = fuenteTexto.widthOfTextAtSize(marca.newText, 9);
+                            const paddingX = 4;
+                            const paddingY = 3;
+                            
+                            // Dibujar fondo blanco semitransparente
+                            paginaAEditar.drawRectangle({
+                                x: xReal - paddingX,
+                                y: yReal - alturaReal/2 - paddingY,
+                                width: Math.max(textWidth + paddingX * 2, anchoReal + paddingX * 2),
+                                height: alturaReal + paddingY * 2,
+                                color: rgb(1, 1, 1),
+                                opacity: 0.85,
+                            });
+                            
+                            // Dibujar texto tachado
+                            paginaAEditar.drawText(marca.newText, {
+                                x: xReal,
+                                y: yReal + 5,
+                                size: 9,
+                                color: rgb(0.8, 0, 0),
+                            });
+                        } else {
+                            // Para reemplazo, dibujar texto nuevo con fondo semitransparente
+                            const textWidth = fuenteTexto.widthOfTextAtSize(marca.newText, 9);
+                            const paddingX = 4;
+                            const paddingY = 3;
+                            
+                            // Dibujar fondo blanco semitransparente
+                            paginaAEditar.drawRectangle({
+                                x: xReal - paddingX,
+                                y: yReal - alturaReal/2 - paddingY,
+                                width: Math.max(textWidth + paddingX * 2, anchoReal + paddingX * 2),
+                                height: alturaReal + paddingY * 2,
+                                color: rgb(1, 1, 1),
+                                opacity: 0.85,
+                            });
+                            
+                            // Dibujar texto de reemplazo
+                            paginaAEditar.drawText(marca.newText, {
+                                x: xReal,
+                                y: yReal + 5,
+                                size: 9,
+                                color: rgb(0, 0.5, 0),
+                            });
+                        }
                     });
                 }
 
