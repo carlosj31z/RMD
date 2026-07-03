@@ -131,7 +131,8 @@
         }
 
         .toolbar.minimized button.action-btn,
-        .toolbar.minimized button.save-btn {
+        .toolbar.minimized button.save-btn,
+        .toolbar.minimized button.delete-text-btn {
             padding: 8px 14px;
             font-size: 12px;
             margin: 0;
@@ -216,6 +217,22 @@
             border-radius: 50px;
             border: 2px solid #e9ecef;
             transition: all 0.3s ease;
+            position: relative;
+        }
+
+        .author-container.highlight {
+            border-color: #ff6b6b;
+            box-shadow: 0 0 0 4px rgba(255, 107, 107, 0.3);
+            animation: pulseHighlight 0.6s ease-in-out 3;
+        }
+
+        @keyframes pulseHighlight {
+            0%, 100% {
+                box-shadow: 0 0 0 4px rgba(255, 107, 107, 0.3);
+            }
+            50% {
+                box-shadow: 0 0 0 8px rgba(255, 107, 107, 0.1);
+            }
         }
 
         .author-container label {
@@ -244,6 +261,32 @@
         .author-container:focus-within {
             border-color: #667eea;
             box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        .author-container.highlight:focus-within {
+            border-color: #28a745;
+            box-shadow: 0 0 0 3px rgba(40, 167, 69, 0.2);
+            animation: none;
+        }
+
+        .author-required-indicator {
+            display: none;
+            color: #dc3545;
+            font-size: 11px;
+            margin-top: 4px;
+            position: absolute;
+            bottom: -20px;
+            left: 50%;
+            transform: translateX(-50%);
+            white-space: nowrap;
+            background: white;
+            padding: 2px 8px;
+            border-radius: 10px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+
+        .author-container.highlight .author-required-indicator {
+            display: block;
         }
 
         button {
@@ -516,6 +559,82 @@
             box-shadow: 0 6px 20px rgba(238, 90, 36, 0.4);
         }
 
+        /* MODAL DE CONFIRMACIÓN DE AUTOR */
+        .confirm-modal-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            z-index: 10001;
+            justify-content: center;
+            align-items: center;
+            backdrop-filter: blur(5px);
+            animation: fadeIn 0.3s ease;
+        }
+
+        .confirm-modal {
+            background: white;
+            border-radius: 20px;
+            padding: 30px;
+            width: 90%;
+            max-width: 450px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.4);
+            animation: slideUp 0.4s ease;
+            text-align: center;
+        }
+
+        .confirm-modal .warning-icon {
+            font-size: 48px;
+            margin-bottom: 15px;
+        }
+
+        .confirm-modal h3 {
+            color: #333;
+            margin-bottom: 10px;
+            font-size: 20px;
+        }
+
+        .confirm-modal p {
+            color: #666;
+            margin-bottom: 25px;
+            line-height: 1.5;
+        }
+
+        .confirm-modal .btn-group {
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+        }
+
+        .btn-continue {
+            background: linear-gradient(135deg, #ffc107 0%, #ff9800 100%);
+            color: #1a1a1a;
+            padding: 12px 24px;
+            border-radius: 50px;
+            font-weight: 600;
+        }
+
+        .btn-continue:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(255, 193, 7, 0.4);
+        }
+
+        .btn-fill-author {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 12px 24px;
+            border-radius: 50px;
+            font-weight: 600;
+        }
+
+        .btn-fill-author:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
+        }
+
         /* WIDGET FLOTANTE DE NOTAS */
         .notes-widget {
             position: fixed;
@@ -692,7 +811,7 @@
             position: absolute;
             top: -20px;
             left: 0;
-            background: rgba(255, 255, 255, 0.9);
+            background: rgba(255, 255, 255, 0.92);
             padding: 4px 10px;
             border: 2px solid #28a745;
             border-radius: 6px;
@@ -784,14 +903,6 @@
             font-style: italic;
         }
 
-        /* Estilos para el fondo semitransparente en el PDF */
-        .pdf-white-bg {
-            background: rgba(255, 255, 255, 0.92) !important;
-            padding: 2px 6px !important;
-            border-radius: 3px !important;
-            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1) !important;
-        }
-
         @media (max-width: 768px) {
             .toolbar.minimized {
                 flex-wrap: wrap;
@@ -827,9 +938,10 @@
                         <input type="file" id="upload" accept="application/pdf" />
                         <div id="fileNameDisplay" class="file-name"></div>
 
-                        <div class="author-container">
-                            <label for="txtElaborado">👤 Autor:</label>
-                            <input type="text" id="txtElaborado" placeholder="Nombre del autor..." />
+                        <div class="author-container" id="authorContainer">
+                            <label for="txtElaborado">👥 Autor(es):</label>
+                            <input type="text" id="txtElaborado" placeholder="Nombre del autor o autores..." />
+                            <span class="author-required-indicator">⚠️ Campo requerido</span>
                         </div>
                     </div>
                 </div>
@@ -845,7 +957,7 @@
                 <div class="toolbar-section">
                     <button class="action-btn" onmousedown="event.preventDefault(); aplicarCorreccion()">📝 Reemplazar</button>
                     <button class="delete-text-btn" onmousedown="event.preventDefault(); marcarParaBorrar()">🗑️ Borrar texto</button>
-                    <button class="save-btn" id="btnGuardar" onclick="guardarPDFEnPC()" style="display: none;">💾 Guardar</button>
+                    <button class="save-btn" id="btnGuardar" onclick="verificarAutorYGuardar()" style="display: none;">💾 Guardar</button>
                 </div>
                 
                 <div class="hint-toolbar">
@@ -879,6 +991,23 @@
                 <button class="btn-cancel" id="cancelReplacementBtn">Cancelar</button>
                 <button class="btn-delete-text" id="deleteTextBtn" style="display:none;">🗑️ Marcar para borrar</button>
                 <button class="btn-apply" id="applyReplacementBtn">✓ Aplicar Cambio</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL DE CONFIRMACIÓN DE AUTOR -->
+    <div class="confirm-modal-overlay" id="confirmAuthorModal">
+        <div class="confirm-modal">
+            <div class="warning-icon">⚠️</div>
+            <h3>Campo Autor(es) Vacío</h3>
+            <p>No has completado el campo <strong>"Autor(es)"</strong>. ¿Deseas continuar con la descarga sin especificar el autor o prefieres completarlo ahora?</p>
+            <div class="btn-group">
+                <button class="btn-continue" id="btnContinueWithoutAuthor">
+                    ✓ Continuar sin autor
+                </button>
+                <button class="btn-fill-author" id="btnFillAuthor">
+                    ✏️ Completar autor ahora
+                </button>
             </div>
         </div>
     </div>
@@ -920,7 +1049,7 @@
         let pdfBytesOriginal = null;
         let nombreArchivoOriginal = "documento.pdf";
 
-        // Elementos del modal
+        // Elementos del modal de reemplazo
         const modalOverlay = document.getElementById('replacementModal');
         const modalTitle = document.getElementById('modalTitle');
         const originalTextDisplay = document.getElementById('originalTextDisplay');
@@ -932,14 +1061,20 @@
         const deleteTextBtn = document.getElementById('deleteTextBtn');
         const modalFooter = document.getElementById('modalFooter');
 
+        // Elementos del modal de confirmación de autor
+        const confirmAuthorModal = document.getElementById('confirmAuthorModal');
+        const btnContinueWithoutAuthor = document.getElementById('btnContinueWithoutAuthor');
+        const btnFillAuthor = document.getElementById('btnFillAuthor');
+        const authorContainer = document.getElementById('authorContainer');
+        const txtElaborado = document.getElementById('txtElaborado');
+
         let pendingCorrection = null;
-        let modalMode = 'replace'; // 'replace' o 'delete'
+        let modalMode = 'replace';
 
         const notesWidget = document.getElementById('seccionNotas');
         const notesIcon = document.getElementById('notesIcon');
         const btnCloseNotes = document.getElementById('btnCloseNotes');
         const txtNotasAdicionales = document.getElementById('txtNotasAdicionales');
-        const txtElaborado = document.getElementById('txtElaborado');
 
         // Toolbar minimize/maximize
         const mainToolbar = document.getElementById('mainToolbar');
@@ -962,7 +1097,6 @@
         });
 
         // Auto-minimizar al hacer scroll
-        let lastScrollTop = 0;
         window.addEventListener('scroll', function() {
             const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
             if (scrollTop > 100 && !isToolbarMinimized) {
@@ -972,10 +1106,61 @@
                 toolbarToggle.textContent = '▼';
                 toolbarToggle.title = 'Maximizar barra';
             }
-            lastScrollTop = scrollTop;
         });
 
-        // Funciones del modal
+        // Función para verificar autor antes de guardar
+        function verificarAutorYGuardar() {
+            const elaboradoPor = txtElaborado.value.trim();
+            
+            if (elaboradoPor === "") {
+                // Mostrar modal de confirmación
+                confirmAuthorModal.style.display = 'flex';
+            } else {
+                // Si hay autor, guardar directamente
+                guardarPDFEnPC();
+            }
+        }
+
+        // Event listeners del modal de confirmación de autor
+        btnContinueWithoutAuthor.addEventListener('click', function() {
+            confirmAuthorModal.style.display = 'none';
+            guardarPDFEnPC();
+        });
+
+        btnFillAuthor.addEventListener('click', function() {
+            confirmAuthorModal.style.display = 'none';
+            // Iluminar el campo de autor
+            authorContainer.classList.add('highlight');
+            txtElaborado.focus();
+            
+            // Quitar el highlight cuando el usuario empiece a escribir
+            const removeHighlight = function() {
+                authorContainer.classList.remove('highlight');
+                txtElaborado.removeEventListener('input', removeHighlight);
+                txtElaborado.removeEventListener('focus', removeHighlight);
+            };
+            txtElaborado.addEventListener('input', removeHighlight);
+            txtElaborado.addEventListener('focus', removeHighlight);
+            
+            // Scroll hasta el campo de autor si está minimizado
+            if (isToolbarMinimized) {
+                isToolbarMinimized = false;
+                mainToolbar.classList.remove('minimized');
+                mainToolbar.classList.add('maximized');
+                toolbarToggle.textContent = '▲';
+                toolbarToggle.title = 'Minimizar barra';
+            }
+            
+            authorContainer.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        });
+
+        confirmAuthorModal.addEventListener('click', function(e) {
+            if (e.target === confirmAuthorModal) {
+                confirmAuthorModal.style.display = 'none';
+            }
+        });
+
+        // Funciones del modal de reemplazo
         function showReplacementModal(textoSeleccionado, correctionData, mode = 'replace') {
             modalMode = mode;
             originalTextDisplay.textContent = textoSeleccionado;
@@ -1074,7 +1259,7 @@
             hideReplacementModal();
         }
 
-        // Event listeners del modal
+        // Event listeners del modal de reemplazo
         closeModalBtn.addEventListener('click', hideReplacementModal);
         cancelReplacementBtn.addEventListener('click', hideReplacementModal);
         applyReplacementBtn.addEventListener('click', applyReplacementFromModal);
@@ -1344,6 +1529,7 @@
                 const paginasDelPDF = documentoPDF.getPages();
 
                 const fuenteTexto = await documentoPDF.embedFont(StandardFonts.Helvetica);
+                const fuenteNegrita = await documentoPDF.embedFont(StandardFonts.HelveticaBold);
 
                 const ahora = new Date();
                 const anio = ahora.getFullYear();
@@ -1351,29 +1537,60 @@
                 const dia = String(ahora.getDate()).padStart(2, '0');
                 const fechaFormateada = `${anio}-${mes}-${dia}`;
 
+                // 0. INYECTAR EL NOMBRE DEL AUTOR(ES) Y LA FECHA CON FONDO BLANCO
                 if (elaboradoPor !== "") {
                     const primeraPagina = paginasDelPDF[0];
                     if (primeraPagina) {
                         const altoPagina = primeraPagina.getHeight();
-
-                        primeraPagina.drawText(elaboradoPor, {
-                            x: 45,
-                            y: altoPagina - 85,
-                            size: 14,
-                            font: fuenteTexto,
-                            color: rgb(0, 0.5, 0)
+                        const margenX = 40;
+                        const posYNombre = altoPagina - 82;
+                        const posYFecha = altoPagina - 105;
+                        
+                        // Calcular dimensiones para el fondo blanco
+                        const textoAutor = `Autor(es): ${elaboradoPor}`;
+                        const textoFecha = `Fecha: ${fechaFormateada}`;
+                        
+                        const anchoTextoAutor = fuenteNegrita.widthOfTextAtSize(textoAutor, 13);
+                        const anchoTextoFecha = fuenteTexto.widthOfTextAtSize(textoFecha, 11);
+                        const anchoMaximo = Math.max(anchoTextoAutor, anchoTextoFecha);
+                        
+                        const paddingX = 8;
+                        const paddingY = 6;
+                        const alturaTotal = 48;
+                        
+                        // Dibujar rectángulo blanco de fondo
+                        primeraPagina.drawRectangle({
+                            x: margenX - paddingX,
+                            y: posYFecha - paddingY - 8,
+                            width: anchoMaximo + (paddingX * 2),
+                            height: alturaTotal,
+                            color: rgb(1, 1, 1),
+                            opacity: 0.95,
+                            borderWidth: 1,
+                            borderColor: rgb(0.8, 0.8, 0.8),
                         });
 
-                        primeraPagina.drawText(fechaFormateada, {
-                            x: 45,
-                            y: altoPagina - 105,
-                            size: 12,
+                        // Dibujar el nombre del autor(es) en negrita
+                        primeraPagina.drawText(textoAutor, {
+                            x: margenX,
+                            y: posYNombre,
+                            size: 13,
+                            font: fuenteNegrita,
+                            color: rgb(0, 0.2, 0.4)
+                        });
+                        
+                        // Dibujar la fecha
+                        primeraPagina.drawText(textoFecha, {
+                            x: margenX,
+                            y: posYFecha,
+                            size: 11,
                             font: fuenteTexto,
-                            color: rgb(0, 0.5, 0)
+                            color: rgb(0.3, 0.3, 0.3)
                         });
                     }
                 }
 
+                // 1. INYECTAR TACHADOS Y CORRECCIONES CON FONDO BLANCO SEMITRANSPARENTE
                 for (const numPagina in annotationsData) {
                     const indiceReal = parseInt(numPagina) - 1;
                     const paginaAEditar = paginasDelPDF[indiceReal];
@@ -1394,23 +1611,24 @@
                             color: rgb(1, 0, 0),
                         });
 
+                        const textWidth = fuenteTexto.widthOfTextAtSize(marca.newText, 9);
+                        const paddingX = 5;
+                        const paddingY = 4;
+                        
+                        // Dibujar fondo blanco semitransparente
+                        paginaAEditar.drawRectangle({
+                            x: xReal - paddingX,
+                            y: yReal - alturaReal/2 - paddingY,
+                            width: Math.max(textWidth + paddingX * 2, anchoReal + paddingX * 2),
+                            height: alturaReal + paddingY * 2,
+                            color: rgb(1, 1, 1),
+                            opacity: 0.9,
+                            borderWidth: 0.5,
+                            borderColor: marca.type === 'delete' ? rgb(0.8, 0, 0) : rgb(0, 0.5, 0),
+                        });
+
                         if (marca.type === 'delete') {
-                            // Para borrado, solo dibujar el texto tachado con fondo semitransparente
-                            const textWidth = fuenteTexto.widthOfTextAtSize(marca.newText, 9);
-                            const paddingX = 4;
-                            const paddingY = 3;
-                            
-                            // Dibujar fondo blanco semitransparente
-                            paginaAEditar.drawRectangle({
-                                x: xReal - paddingX,
-                                y: yReal - alturaReal/2 - paddingY,
-                                width: Math.max(textWidth + paddingX * 2, anchoReal + paddingX * 2),
-                                height: alturaReal + paddingY * 2,
-                                color: rgb(1, 1, 1),
-                                opacity: 0.85,
-                            });
-                            
-                            // Dibujar texto tachado
+                            // Para borrado, dibujar texto tachado en rojo
                             paginaAEditar.drawText(marca.newText, {
                                 x: xReal,
                                 y: yReal + 5,
@@ -1418,22 +1636,7 @@
                                 color: rgb(0.8, 0, 0),
                             });
                         } else {
-                            // Para reemplazo, dibujar texto nuevo con fondo semitransparente
-                            const textWidth = fuenteTexto.widthOfTextAtSize(marca.newText, 9);
-                            const paddingX = 4;
-                            const paddingY = 3;
-                            
-                            // Dibujar fondo blanco semitransparente
-                            paginaAEditar.drawRectangle({
-                                x: xReal - paddingX,
-                                y: yReal - alturaReal/2 - paddingY,
-                                width: Math.max(textWidth + paddingX * 2, anchoReal + paddingX * 2),
-                                height: alturaReal + paddingY * 2,
-                                color: rgb(1, 1, 1),
-                                opacity: 0.85,
-                            });
-                            
-                            // Dibujar texto de reemplazo
+                            // Para reemplazo, dibujar texto nuevo en verde
                             paginaAEditar.drawText(marca.newText, {
                                 x: xReal,
                                 y: yReal + 5,
@@ -1444,6 +1647,7 @@
                     });
                 }
 
+                // 2. SISTEMA DE PAGINACIÓN DINÁMICA PARA NOTAS
                 if (notasAdicionales !== "") {
                     const fuenteTitulo = await documentoPDF.embedFont(StandardFonts.HelveticaBold);
 
