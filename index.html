@@ -1529,7 +1529,6 @@
                 const paginasDelPDF = documentoPDF.getPages();
 
                 const fuenteTexto = await documentoPDF.embedFont(StandardFonts.Helvetica);
-                const fuenteNegrita = await documentoPDF.embedFont(StandardFonts.HelveticaBold);
 
                 const ahora = new Date();
                 const anio = ahora.getFullYear();
@@ -1537,55 +1536,56 @@
                 const dia = String(ahora.getDate()).padStart(2, '0');
                 const fechaFormateada = `${anio}-${mes}-${dia}`;
 
-                // 0. INYECTAR EL NOMBRE DEL AUTOR(ES) Y LA FECHA CON FONDO BLANCO
+                // 0. INYECTAR EL NOMBRE Y LA FECHA EN EL RECUADRO SUPERIOR IZQUIERDO (CABECERA)
+                // CON FONDO BLANCO SUTIL INDIVIDUAL PARA CADA TEXTO
                 if (elaboradoPor !== "") {
                     const primeraPagina = paginasDelPDF[0];
                     if (primeraPagina) {
                         const altoPagina = primeraPagina.getHeight();
-                        const margenX = 40;
-                        const posYNombre = altoPagina - 82;
-                        const posYFecha = altoPagina - 105;
+                        const xAutor = 45;
+                        const yAutor = altoPagina - 85;
+                        const yFecha = altoPagina - 105;
                         
-                        // Calcular dimensiones para el fondo blanco
-                        const textoAutor = `Autor(es): ${elaboradoPor}`;
-                        const textoFecha = `Fecha: ${fechaFormateada}`;
+                        // Calcular ancho del texto del autor para el fondo
+                        const anchoTextoAutor = fuenteTexto.widthOfTextAtSize(elaboradoPor, 14);
+                        const anchoTextoFecha = fuenteTexto.widthOfTextAtSize(fechaFormateada, 12);
                         
-                        const anchoTextoAutor = fuenteNegrita.widthOfTextAtSize(textoAutor, 13);
-                        const anchoTextoFecha = fuenteTexto.widthOfTextAtSize(textoFecha, 11);
-                        const anchoMaximo = Math.max(anchoTextoAutor, anchoTextoFecha);
-                        
-                        const paddingX = 8;
-                        const paddingY = 6;
-                        const alturaTotal = 48;
-                        
-                        // Dibujar rectángulo blanco de fondo
+                        // Fondo blanco sutil para el nombre del autor
                         primeraPagina.drawRectangle({
-                            x: margenX - paddingX,
-                            y: posYFecha - paddingY - 8,
-                            width: anchoMaximo + (paddingX * 2),
-                            height: alturaTotal,
+                            x: xAutor - 2,
+                            y: yAutor - 2,
+                            width: anchoTextoAutor + 4,
+                            height: 16,
                             color: rgb(1, 1, 1),
-                            opacity: 0.95,
-                            borderWidth: 1,
-                            borderColor: rgb(0.8, 0.8, 0.8),
-                        });
-
-                        // Dibujar el nombre del autor(es) en negrita
-                        primeraPagina.drawText(textoAutor, {
-                            x: margenX,
-                            y: posYNombre,
-                            size: 13,
-                            font: fuenteNegrita,
-                            color: rgb(0, 0.2, 0.4)
+                            opacity: 0.7,
                         });
                         
-                        // Dibujar la fecha
-                        primeraPagina.drawText(textoFecha, {
-                            x: margenX,
-                            y: posYFecha,
-                            size: 11,
+                        // Nombre del autor (verde oscuro, tamaño 14)
+                        primeraPagina.drawText(elaboradoPor, {
+                            x: xAutor,             
+                            y: yAutor,              
+                            size: 14,          
                             font: fuenteTexto,
-                            color: rgb(0.3, 0.3, 0.3)
+                            color: rgb(0, 0.5, 0) 
+                        });
+                        
+                        // Fondo blanco sutil para la fecha
+                        primeraPagina.drawRectangle({
+                            x: xAutor - 2,
+                            y: yFecha - 2,
+                            width: anchoTextoFecha + 4,
+                            height: 14,
+                            color: rgb(1, 1, 1),
+                            opacity: 0.7,
+                        });
+                        
+                        // Fecha (gris oscuro, tamaño 12)
+                        primeraPagina.drawText(fechaFormateada, {
+                            x: xAutor,             
+                            y: yFecha,            
+                            size: 12,          
+                            font: fuenteTexto,
+                            color: rgb(0.3, 0.3, 0.3) 
                         });
                     }
                 }
@@ -1623,12 +1623,9 @@
                             height: alturaReal + paddingY * 2,
                             color: rgb(1, 1, 1),
                             opacity: 0.9,
-                            borderWidth: 0.5,
-                            borderColor: marca.type === 'delete' ? rgb(0.8, 0, 0) : rgb(0, 0.5, 0),
                         });
 
                         if (marca.type === 'delete') {
-                            // Para borrado, dibujar texto tachado en rojo
                             paginaAEditar.drawText(marca.newText, {
                                 x: xReal,
                                 y: yReal + 5,
@@ -1636,7 +1633,6 @@
                                 color: rgb(0.8, 0, 0),
                             });
                         } else {
-                            // Para reemplazo, dibujar texto nuevo en verde
                             paginaAEditar.drawText(marca.newText, {
                                 x: xReal,
                                 y: yReal + 5,
