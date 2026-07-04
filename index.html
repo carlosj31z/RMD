@@ -1,16 +1,17 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>EDITAR PDF</title>
-    
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600&family=Playfair+Display:wght@400;700;900&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
-    
+
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600&family=Playfair+Display:wght@400;700;900&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
+
     <style>
+        /* ===== ESTILOS COMPLETOS ===== */
         :root {
             --primary: #6366f1;
             --primary-dark: #4f46e5;
@@ -59,7 +60,7 @@
             content: '';
             position: fixed;
             top: 0; left: 0; width: 100%; height: 100%;
-            background: 
+            background:
                 radial-gradient(circle at 20% 80%, rgba(99,102,241,0.15) 0%, transparent 50%),
                 radial-gradient(circle at 80% 20%, rgba(236,72,153,0.1) 0%, transparent 50%),
                 radial-gradient(circle at 50% 50%, rgba(16,185,129,0.08) 0%, transparent 50%);
@@ -111,7 +112,6 @@
             position: relative;
         }
 
-        /* ===== ILUMINACIÓN AUMENTADA ===== */
         .toolbar::before {
             content: '';
             position: absolute;
@@ -138,7 +138,7 @@
             position: absolute;
             inset: -6px;
             border-radius: calc(var(--radius-xl) + 6px);
-            background: 
+            background:
                 radial-gradient(circle at 20% 30%, rgba(99,102,241,0.15), transparent 50%),
                 radial-gradient(circle at 80% 70%, rgba(236,72,153,0.12), transparent 45%),
                 radial-gradient(circle at 50% 50%, rgba(16,185,129,0.08), transparent 60%);
@@ -186,7 +186,7 @@
             opacity: 0.5;
         }
         .toolbar-toggle:hover { background: var(--gray-lighter); opacity: 1; transform: rotate(180deg); }
-        .toolbar.minimized .toolbar-toggle { 
+        .toolbar.minimized .toolbar-toggle {
             display: none;
         }
 
@@ -287,12 +287,12 @@
         .btn-nav:hover { background: var(--primary); color: white; border-color: var(--primary); transform: scale(1.05); box-shadow: 0 4px 12px rgba(99,102,241,0.3); }
         .btn-replace { background: linear-gradient(135deg, var(--secondary) 0%, var(--secondary-dark) 100%); color: white; box-shadow: 0 4px 12px rgba(236,72,153,0.3); border: 2px solid transparent; font-size: 12px; padding: 9px 16px; }
         .btn-replace:hover { transform: translateY(-2px); box-shadow: 0 8px 20px rgba(236,72,153,0.45); }
-        .btn-delete { background: linear-gradient(135deg, #f97316 0%, #ea580c 100%); color: white; box-shadow: 0 4px 12px rgba(249,115,22,0.3); border: 2px solid transparent; font-size: 12px; padding: 9px 16px; }
-        .btn-delete:hover { transform: translateY(-2px); box-shadow: 0 8px 20px rgba(249,115,22,0.45); }
         .btn-save { background: linear-gradient(135deg, var(--success) 0%, var(--success-dark) 100%); color: white; box-shadow: 0 4px 12px rgba(16,185,129,0.3); border: 2px solid transparent; font-weight: 700; font-size: 12px; padding: 9px 20px; }
         .btn-save:hover { transform: translateY(-2px); box-shadow: 0 8px 20px rgba(16,185,129,0.45); }
         .btn-image { background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%); color: white; box-shadow: 0 4px 12px rgba(139,92,246,0.3); border: 2px solid transparent; font-size: 12px; padding: 9px 16px; }
         .btn-image:hover { transform: translateY(-2px); box-shadow: 0 8px 20px rgba(139,92,246,0.45); }
+        .btn-compare { background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%); color: white; box-shadow: 0 4px 12px rgba(59,130,246,0.3); border: 2px solid transparent; font-size: 12px; padding: 9px 16px; }
+        .btn-compare:hover { transform: translateY(-2px); box-shadow: 0 8px 20px rgba(59,130,246,0.45); }
 
         .toolbar.minimized .btn { padding: 5px 10px; font-size: 10px; gap: 3px; }
         .toolbar.minimized .btn-nav { padding: 5px 8px; font-size: 11px; }
@@ -367,42 +367,167 @@
         #annotations-layer { position: absolute; left: 0; top: 0; right: 0; bottom: 0; pointer-events: none; z-index: 3; }
         .correction-mark { position: absolute; pointer-events: auto; z-index: 4; }
         .strike-line { width: 100%; height: 2px; background: var(--danger); position: absolute; top: 50%; transform: translateY(-50%); box-shadow: 0 0 6px rgba(239,68,68,0.4); z-index: 1; border-radius: 1px; }
-        .new-text-label { 
-            color: #065f46; 
-            font-weight: 700; 
-            font-size: 12px; 
-            position: absolute; 
-            top: 0; 
-            left: 0; 
-            width: 100%; 
-            height: 100%; 
-            background: rgba(255,255,255,0.82); 
-            padding: 1px 6px; 
-            border-radius: 3px; 
-            white-space: nowrap; 
-            cursor: pointer; 
-            transition: all var(--transition); 
-            box-shadow: 0 1px 3px rgba(0,0,0,0.1); 
-            display: flex; 
-            align-items: center; 
-            justify-content: flex-start; 
-            z-index: 2; 
-            line-height: 1.1; 
-            overflow: hidden; 
-            text-overflow: ellipsis; 
-        }
-        .new-text-label.deleted-text { 
-            color: var(--gray); 
-            font-style: italic; 
-            text-decoration: line-through; 
-            text-decoration-color: var(--danger);
-            text-decoration-thickness: 2px;
-            background: rgba(255,255,255,0.85); 
+        .new-text-label {
+            color: #065f46;
+            font-weight: 700;
+            font-size: 12px;
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(255,255,255,0.82);
+            padding: 1px 6px;
+            border-radius: 3px;
+            white-space: nowrap;
+            cursor: pointer;
+            transition: all var(--transition);
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            display: flex;
+            align-items: center;
+            justify-content: flex-start;
+            z-index: 2;
+            line-height: 1.1;
+            overflow: hidden;
+            text-overflow: ellipsis;
         }
         .new-text-label:hover { background: rgba(220,252,231,0.92); box-shadow: 0 2px 8px rgba(0,0,0,0.2); }
-        .new-text-label.deleted-text:hover { background: rgba(254,226,226,0.92); }
         .delete-btn { position: absolute; right: -12px; top: -12px; background: var(--danger); color: white; border-radius: 50%; width: 20px; height: 20px; font-size: 10px; border: none; cursor: pointer; display: flex; align-items: center; justify-content: center; padding: 0; box-shadow: 0 2px 8px rgba(239,68,68,0.4); transition: all var(--transition); z-index: 6; border: 2px solid white; }
         .delete-btn:hover { background: var(--danger-dark); transform: scale(1.2); box-shadow: 0 4px 14px rgba(239,68,68,0.55); }
+
+        /* ========== COMPARISON PANEL ========== */
+        .comparison-panel {
+            display: none;
+            margin-top: 30px;
+            background: var(--bg-card);
+            border-radius: var(--radius-xl);
+            box-shadow: var(--shadow-lg);
+            padding: 24px;
+            border: 1px solid rgba(255,255,255,0.2);
+            position: relative;
+            z-index: 10;
+        }
+        .comparison-panel .panel-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+        .comparison-panel .panel-header h3 {
+            font-size: 18px;
+            color: var(--dark);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .comparison-panel .panel-header .btn-close-compare {
+            background: var(--gray-lightest);
+            border: none;
+            padding: 6px 16px;
+            border-radius: var(--radius-full);
+            font-weight: 600;
+            color: var(--dark);
+            cursor: pointer;
+            transition: all var(--transition);
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .comparison-panel .panel-header .btn-close-compare:hover {
+            background: var(--danger);
+            color: white;
+        }
+
+        .file-selectors {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+        .file-selector {
+            flex: 1;
+            min-width: 200px;
+            border: 2px dashed var(--gray-lightest);
+            border-radius: var(--radius);
+            padding: 20px;
+            text-align: center;
+            transition: all var(--transition);
+            cursor: pointer;
+            background: var(--bg);
+            position: relative;
+        }
+        .file-selector:hover { border-color: var(--primary); background: rgba(99,102,241,0.05); }
+        .file-selector.has-file { border-color: var(--success); background: rgba(16,185,129,0.05); }
+        .file-selector label {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 6px;
+            cursor: pointer;
+            font-weight: 600;
+            color: var(--gray);
+        }
+        .file-selector label i { font-size: 28px; color: var(--primary); }
+        .file-selector .file-name-display {
+            font-size: 12px;
+            color: var(--dark);
+            font-weight: 500;
+            margin-top: 6px;
+            word-break: break-all;
+        }
+        .file-selector input[type="file"] { display: none; }
+        .file-selector .badge {
+            position: absolute;
+            top: -8px;
+            right: -8px;
+            background: var(--success);
+            color: white;
+            border-radius: 50%;
+            width: 24px;
+            height: 24px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+            font-weight: 700;
+            box-shadow: 0 2px 8px rgba(16,185,129,0.3);
+        }
+
+        .comparison-actions {
+            display: flex;
+            justify-content: center;
+            gap: 12px;
+            margin-top: 10px;
+        }
+        .btn-compare-action {
+            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+            color: white;
+            padding: 10px 30px;
+            font-size: 14px;
+            font-weight: 700;
+            border: none;
+            border-radius: var(--radius-full);
+            cursor: pointer;
+            transition: all var(--transition);
+            box-shadow: 0 4px 12px rgba(99,102,241,0.3);
+        }
+        .btn-compare-action:hover:not(:disabled) { transform: translateY(-2px); box-shadow: 0 8px 20px rgba(99,102,241,0.4); }
+        .btn-compare-action:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+
+        #comparisonViewer {
+            width: 100%;
+            height: 800px;
+            border: none;
+            border-radius: var(--radius);
+            background: var(--bg);
+            margin-top: 20px;
+            display: none;
+        }
 
         /* ========== NOTES WIDGET ========== */
         .notes-widget {
@@ -471,6 +596,8 @@
             .btn { padding: 5px 10px; font-size: 10px; }
             .notes-widget.maximized { width: 90vw; height: 70vh; right: 5vw; }
             .notes-widget.minimized { width: 48px; height: 48px; font-size: 24px; right: 20px; }
+            #comparisonViewer { height: 400px; }
+            .file-selectors { flex-direction: column; }
         }
     </style>
 </head>
@@ -501,9 +628,9 @@
                         <button class="btn btn-nav" id="next" onclick="onNextPage()"><i class="fa-solid fa-chevron-right"></i></button>
                     </div>
                     <button class="btn btn-replace" onmousedown="event.preventDefault(); aplicarCorreccion()"><i class="fa-solid fa-pen-to-square"></i> Reemplazar</button>
-                    <button class="btn btn-delete" onmousedown="event.preventDefault(); marcarParaBorrar()"><i class="fa-solid fa-eraser"></i> Borrar</button>
                     <button class="btn btn-image" onclick="document.getElementById('imageUpload').click()"><i class="fa-solid fa-image"></i> Imagen</button>
                     <input type="file" id="imageUpload" accept="image/*" style="display:none" onchange="handleImageUpload(event)">
+                    <button class="btn btn-compare" id="btnComparar"><i class="fa-solid fa-code-compare"></i> Comparar PDFs</button>
                     <button class="btn btn-save" id="btnGuardar" onclick="verificarAutorYGuardar()" style="display:none;"><i class="fa-solid fa-floppy-disk"></i> Guardar</button>
                 </div>
                 <div class="toolbar-tip"><i class="fa-solid fa-lightbulb"></i><span><strong>Tip:</strong> Selecciona texto y presiona <strong>Supr</strong> para reemplazar. <strong>Ctrl+Z</strong> deshacer.</span></div>
@@ -525,7 +652,6 @@
             </div>
             <div class="modal-footer" id="modalFooter">
                 <button class="btn btn-cancel" id="cancelReplacementBtn"><i class="fa-solid fa-times"></i> Cancelar</button>
-                <button class="btn btn-delete-text" id="deleteTextBtn" style="display:none;"><i class="fa-solid fa-trash-can"></i> Marcar para borrar</button>
                 <button class="btn btn-apply" id="applyReplacementBtn"><i class="fa-solid fa-check"></i> Aplicar Cambio</button>
             </div>
         </div>
@@ -553,6 +679,38 @@
         </div>
     </div>
 
+    <!-- ========== COMPARISON PANEL ========== -->
+    <div class="comparison-panel" id="comparisonPanel">
+        <div class="panel-header">
+            <h3><i class="fa-solid fa-code-compare"></i> Comparar PDFs</h3>
+            <button class="btn-close-compare" id="btnCerrarComparacion"><i class="fa-solid fa-xmark"></i> Cerrar</button>
+        </div>
+        <div class="file-selectors">
+            <div class="file-selector" id="leftFileSelector">
+                <label for="leftFileInput">
+                    <i class="fa-solid fa-file-pdf"></i>
+                    <span>PDF 1 (Versión anterior)</span>
+                    <span class="file-name-display" id="leftFileName">Ningún archivo seleccionado</span>
+                </label>
+                <input type="file" id="leftFileInput" accept="application/pdf" />
+                <span class="badge" style="display:none;">✓</span>
+            </div>
+            <div class="file-selector" id="rightFileSelector">
+                <label for="rightFileInput">
+                    <i class="fa-solid fa-file-pdf"></i>
+                    <span>PDF 2 (Versión nueva)</span>
+                    <span class="file-name-display" id="rightFileName">Ningún archivo seleccionado</span>
+                </label>
+                <input type="file" id="rightFileInput" accept="application/pdf" />
+                <span class="badge" style="display:none;">✓</span>
+            </div>
+        </div>
+        <div class="comparison-actions">
+            <button class="btn-compare-action" id="btnExecuteCompare" disabled><i class="fa-solid fa-play"></i> Comparar</button>
+        </div>
+        <iframe id="comparisonViewer" allowfullscreen></iframe>
+    </div>
+
     <div class="notes-widget minimized" id="seccionNotas">
         <div class="notes-icon" id="notesIcon">📝</div>
         <div class="notes-content">
@@ -564,6 +722,15 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.min.js"></script>
     <script src="https://unpkg.com/pdf-lib@1.17.1/dist/pdf-lib.min.js"></script>
     <script>
+        // ============================================================
+        // CONFIGURACIÓN DE DRAFTABLE - CREDENCIALES REALES (TESTING)
+        // ============================================================
+        const DRAFTABLE_ACCOUNT_ID = 'iamCqE-test';
+        const DRAFTABLE_API_KEY = 'bf40d75e7491770b9347f2126b7b4a5d';
+
+        // ============================================================
+        // CÓDIGO PRINCIPAL (Edición de PDF, Undo, etc.)
+        // ============================================================
         pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.worker.min.js';
 
         let pdfDoc = null, pageNum = 1, pageRendering = false, pageNumPending = null, scale = 1.5;
@@ -587,7 +754,6 @@
         const closeModalBtn = document.getElementById('closeModalBtn');
         const cancelReplacementBtn = document.getElementById('cancelReplacementBtn');
         const applyReplacementBtn = document.getElementById('applyReplacementBtn');
-        const deleteTextBtn = document.getElementById('deleteTextBtn');
 
         const confirmAuthorModal = document.getElementById('confirmAuthorModal');
         const btnContinueWithoutAuthor = document.getElementById('btnContinueWithoutAuthor');
@@ -596,7 +762,6 @@
         const txtElaborado = document.getElementById('txtElaborado');
 
         let pendingCorrection = null;
-        let modalMode = 'replace';
 
         const notesWidget = document.getElementById('seccionNotas');
         const notesIcon = document.getElementById('notesIcon');
@@ -724,19 +889,7 @@
             const viewerRect = annotationsLayer.getBoundingClientRect();
             const x = rect.left - viewerRect.left, y = rect.top - viewerRect.top, width = rect.width, height = rect.height;
             selection.removeAllRanges();
-            showReplacementModal(textoSeleccionado, { x, y, width, height, textoSeleccionado }, 'replace');
-        }
-
-        function marcarParaBorrar() {
-            const selection = window.getSelection();
-            const textoSeleccionado = selection.toString().trim();
-            if (!textoSeleccionado) { alert("No has seleccionado nada."); return; }
-            const range = selection.getRangeAt(0);
-            const rect = range.getBoundingClientRect();
-            const viewerRect = annotationsLayer.getBoundingClientRect();
-            const x = rect.left - viewerRect.left, y = rect.top - viewerRect.top, width = rect.width, height = rect.height;
-            selection.removeAllRanges();
-            showReplacementModal(textoSeleccionado, { x, y, width, height, textoSeleccionado }, 'delete');
+            showReplacementModal(textoSeleccionado, { x, y, width, height, textoSeleccionado });
         }
 
         document.addEventListener('keydown', function(e) {
@@ -755,21 +908,12 @@
         }
 
         // ========== MODAL ==========
-        function showReplacementModal(textoSeleccionado, correctionData, mode = 'replace') {
-            modalMode = mode;
+        function showReplacementModal(textoSeleccionado, correctionData) {
             originalTextDisplay.textContent = textoSeleccionado;
-            if (mode === 'replace') {
-                modalTitle.innerHTML = '<i class="fa-solid fa-pen-to-square"></i> Reemplazar Texto';
-                replacementTextInput.value = '';
-                replacementBox.style.display = 'block';
-                deleteTextBtn.style.display = 'none';
-                applyReplacementBtn.innerHTML = '<i class="fa-solid fa-check"></i> Aplicar Cambio';
-            } else {
-                modalTitle.innerHTML = '<i class="fa-solid fa-eraser"></i> Marcar Texto para Borrar';
-                replacementBox.style.display = 'none';
-                deleteTextBtn.style.display = 'inline-flex';
-                applyReplacementBtn.innerHTML = '<i class="fa-solid fa-check"></i> Confirmar Borrado';
-            }
+            modalTitle.innerHTML = '<i class="fa-solid fa-pen-to-square"></i> Reemplazar Texto';
+            replacementTextInput.value = '';
+            replacementBox.style.display = 'block';
+            applyReplacementBtn.innerHTML = '<i class="fa-solid fa-check"></i> Aplicar Cambio';
             applyReplacementBtn.style.display = 'inline-flex';
             pendingCorrection = correctionData;
             modalOverlay.style.display = 'flex';
@@ -777,7 +921,7 @@
             autoResizeTextarea(replacementTextInput);
         }
 
-        function hideReplacementModal() { modalOverlay.style.display = 'none'; pendingCorrection = null; replacementTextInput.value = ''; modalMode = 'replace'; }
+        function hideReplacementModal() { modalOverlay.style.display = 'none'; pendingCorrection = null; replacementTextInput.value = ''; }
 
         function autoResizeTextarea(textarea) {
             textarea.style.height = 'auto';
@@ -790,18 +934,11 @@
 
         function applyReplacementFromModal() {
             saveUndoState();
-            if (modalMode === 'replace') {
-                const textoNuevo = replacementTextInput.value.trim();
-                if (!textoNuevo || !pendingCorrection) { alert("Escribe el texto de reemplazo."); return; }
-                const { x, y, width, height } = pendingCorrection;
-                if (!annotationsData[pageNum]) annotationsData[pageNum] = [];
-                annotationsData[pageNum].push({ id: Date.now(), x, y, width, height, newText: textoNuevo, type: 'replace' });
-            } else if (modalMode === 'delete') {
-                if (!pendingCorrection) return;
-                const { x, y, width, height, textoSeleccionado } = pendingCorrection;
-                if (!annotationsData[pageNum]) annotationsData[pageNum] = [];
-                annotationsData[pageNum].push({ id: Date.now(), x, y, width, height, newText: textoSeleccionado, type: 'delete' });
-            }
+            const textoNuevo = replacementTextInput.value.trim();
+            if (!textoNuevo || !pendingCorrection) { alert("Escribe el texto de reemplazo."); return; }
+            const { x, y, width, height } = pendingCorrection;
+            if (!annotationsData[pageNum]) annotationsData[pageNum] = [];
+            annotationsData[pageNum].push({ id: Date.now(), x, y, width, height, newText: textoNuevo });
             restaurarAnotaciones(pageNum);
             hideReplacementModal();
         }
@@ -809,15 +946,6 @@
         closeModalBtn.addEventListener('click', hideReplacementModal);
         cancelReplacementBtn.addEventListener('click', hideReplacementModal);
         applyReplacementBtn.addEventListener('click', applyReplacementFromModal);
-        deleteTextBtn.addEventListener('click', () => {
-            saveUndoState();
-            if (!pendingCorrection) return;
-            const { x, y, width, height, textoSeleccionado } = pendingCorrection;
-            if (!annotationsData[pageNum]) annotationsData[pageNum] = [];
-            annotationsData[pageNum].push({ id: Date.now(), x, y, width, height, newText: textoSeleccionado, type: 'delete' });
-            restaurarAnotaciones(pageNum);
-            hideReplacementModal();
-        });
         replacementTextInput.addEventListener('keydown', function(e) {
             if (e.key === 'Enter' && e.ctrlKey) {
                 e.preventDefault();
@@ -834,11 +962,7 @@
                 const div = document.createElement('div');
                 div.className = 'correction-mark';
                 div.style.cssText = `left:${marca.x}px;top:${marca.y}px;width:${marca.width}px;height:${marca.height}px;`;
-                if (marca.type === 'delete') {
-                    div.innerHTML = `<div class="strike-line"></div><div class="new-text-label deleted-text">${marca.newText}</div><button class="delete-btn" onclick="borrarAnotacion(${marca.id},${num})"><i class="fa-solid fa-xmark"></i></button>`;
-                } else {
-                    div.innerHTML = `<div class="strike-line"></div><div class="new-text-label" onclick="editarAnotacion(${marca.id},${num})">${marca.newText}</div><button class="delete-btn" onclick="borrarAnotacion(${marca.id},${num})"><i class="fa-solid fa-xmark"></i></button>`;
-                }
+                div.innerHTML = `<div class="strike-line"></div><div class="new-text-label" onclick="editarAnotacion(${marca.id},${num})">${marca.newText}</div><button class="delete-btn" onclick="borrarAnotacion(${marca.id},${num})"><i class="fa-solid fa-xmark"></i></button>`;
                 annotationsLayer.appendChild(div);
             });
         }
@@ -846,19 +970,10 @@
         function editarAnotacion(id, num) {
             const marca = annotationsData[num].find(m => m.id === id);
             if (!marca) return;
-            if (marca.type === 'delete') {
-                if (!confirm('¿Convertir en reemplazo?')) return;
-                marca.type = 'replace';
-                originalTextDisplay.textContent = "Marcado para borrar: " + marca.newText;
-                replacementTextInput.value = '';
-            } else {
-                originalTextDisplay.textContent = "Actual: " + marca.newText;
-                replacementTextInput.value = marca.newText;
-            }
-            modalMode = 'replace';
+            originalTextDisplay.textContent = "Actual: " + marca.newText;
+            replacementTextInput.value = marca.newText;
             modalTitle.innerHTML = '<i class="fa-solid fa-pen-to-square"></i> Editar Texto';
             replacementBox.style.display = 'block';
-            deleteTextBtn.style.display = 'none';
             applyReplacementBtn.innerHTML = '<i class="fa-solid fa-check"></i> Actualizar';
             applyReplacementBtn.style.display = 'inline-flex';
             pendingCorrection = { id, num, isEdit: true, oldMarca: marca };
@@ -872,13 +987,13 @@
             applyReplacementBtn.onclick = function() {
                 saveUndoState();
                 const txtMod = replacementTextInput.value.trim();
-                if (txtMod) { marca.newText = txtMod; marca.type = 'replace'; restaurarAnotaciones(num); }
+                if (txtMod) { marca.newText = txtMod; restaurarAnotaciones(num); }
                 hideReplacementModal(); applyReplacementBtn.onclick = origFn;
             };
         }
 
         function borrarAnotacion(id, num) {
-            if (confirm('¿Eliminar corrección?')) {
+            if (confirm('¿Eliminar esta corrección?')) {
                 saveUndoState();
                 annotationsData[num] = annotationsData[num].filter(m => m.id !== id);
                 restaurarAnotaciones(num);
@@ -924,77 +1039,46 @@
                 alert("No hay PDF cargado.");
                 return;
             }
-            
+
             try {
                 const notasAdicionales = txtNotasAdicionales.value.trim();
                 const elaboradoPor = txtElaborado.value.trim();
                 const hayMarcas = Object.values(annotationsData).some(p => p && p.length > 0);
                 const hayImagen = uploadedImageBytes !== null;
-                
-                if (!hayMarcas && !notasAdicionales && !elaboradoPor && !hayImagen) { 
-                    alert("No hay cambios para guardar."); 
-                    return; 
+
+                if (!hayMarcas && !notasAdicionales && !elaboradoPor && !hayImagen) {
+                    alert("No hay cambios para guardar.");
+                    return;
                 }
-                
+
                 const { PDFDocument, rgb, StandardFonts } = PDFLib;
                 const doc = await PDFDocument.load(pdfBytesOriginal);
                 const pages = doc.getPages();
                 const font = await doc.embedFont(StandardFonts.Helvetica);
                 const fontBold = await doc.embedFont(StandardFonts.HelveticaBold);
-                
+
                 const now = new Date();
                 const fecha = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-${String(now.getDate()).padStart(2,'0')}`;
 
-                // ========== AUTOR Y FECHA ==========
+                // Autor y fecha
                 if (elaboradoPor && pages.length > 0) {
                     const p = pages[0];
                     const h = p.getHeight();
                     const xA = 45, yA = h - 85, yF = h - 105;
-                    
-                    // Fondo sutil para el autor
-                    p.drawRectangle({ 
-                        x: xA-4, 
-                        y: yA-4, 
-                        width: fontBold.widthOfTextAtSize(elaboradoPor, 12) + 10, 
-                        height: 20, 
-                        color: rgb(0.95, 0.97, 1), 
-                        opacity: 0.25
-                    });
-                    
-                    p.drawText(elaboradoPor, { 
-                        x: xA, 
-                        y: yA, 
-                        size: 12, 
-                        font: fontBold, 
-                        color: rgb(0.1, 0.2, 0.4)
-                    });
-                    
-                    p.drawRectangle({ 
-                        x: xA-4, 
-                        y: yF-4, 
-                        width: fontBold.widthOfTextAtSize(fecha, 10) + 10, 
-                        height: 18, 
-                        color: rgb(0.95, 0.97, 1), 
-                        opacity: 0.2
-                    });
-                    
-                    p.drawText(fecha, { 
-                        x: xA, 
-                        y: yF, 
-                        size: 10, 
-                        font: fontBold, 
-                        color: rgb(0.2, 0.35, 0.6)
-                    });
+                    p.drawRectangle({ x: xA-4, y: yA-4, width: fontBold.widthOfTextAtSize(elaboradoPor, 12) + 10, height: 20, color: rgb(0.95, 0.97, 1), opacity: 0.25 });
+                    p.drawText(elaboradoPor, { x: xA, y: yA, size: 12, font: fontBold, color: rgb(0.1, 0.2, 0.4) });
+                    p.drawRectangle({ x: xA-4, y: yF-4, width: fontBold.widthOfTextAtSize(fecha, 10) + 10, height: 18, color: rgb(0.95, 0.97, 1), opacity: 0.2 });
+                    p.drawText(fecha, { x: xA, y: yF, size: 10, font: fontBold, color: rgb(0.2, 0.35, 0.6) });
                 }
 
-                // ========== ANOTACIONES ==========
+                // Anotaciones (reemplazos)
                 for (const [num, marcas] of Object.entries(annotationsData)) {
                     if (!marcas || marcas.length === 0) continue;
                     const pageIndex = parseInt(num) - 1;
                     if (pageIndex >= pages.length) continue;
                     const page = pages[pageIndex];
                     const pageH = page.getHeight();
-                    
+
                     marcas.forEach(m => {
                         const xR = m.x / scale;
                         const wR = m.width / scale;
@@ -1003,44 +1087,17 @@
                         const yCenter = yTop - (hR / 2);
                         const fs = Math.max(hR * 0.75, 6);
                         const tw = font.widthOfTextAtSize(m.newText, fs);
-                        
-                        // Línea tachada en ROJO
-                        page.drawLine({ 
-                            start: {x: xR, y: yCenter}, 
-                            end: {x: xR + wR, y: yCenter}, 
-                            thickness: 1.5, 
-                            color: rgb(1, 0, 0)
-                        });
-                        
-                        // Solo para reemplazos
-                        if (m.type === 'replace') {
-                            page.drawRectangle({ 
-                                x: xR - 1, 
-                                y: yTop - hR, 
-                                width: tw + 4, 
-                                height: hR, 
-                                color: rgb(1, 1, 1), 
-                                opacity: 0.65 
-                            });
-                            page.drawText(m.newText, { 
-                                x: xR, 
-                                y: yCenter - (fs * 0.25), 
-                                size: fs, 
-                                font: font, 
-                                color: rgb(0, 0.45, 0) 
-                            });
-                        }
+
+                        page.drawLine({ start: {x: xR, y: yCenter}, end: {x: xR + wR, y: yCenter}, thickness: 1.5, color: rgb(1, 0, 0) });
+                        page.drawRectangle({ x: xR - 1, y: yTop - hR, width: tw + 4, height: hR, color: rgb(1, 1, 1), opacity: 0.65 });
+                        page.drawText(m.newText, { x: xR, y: yCenter - (fs * 0.25), size: fs, font: font, color: rgb(0, 0.45, 0) });
                     });
                 }
 
-                // ========== NOTAS ADICIONALES ==========
+                // Notas adicionales
                 if (notasAdicionales) {
-                    const fsN = 11;
-                    const lh = 16;
-                    const mg = 50;
-                    const uw = 595.28 - mg * 2;
+                    const fsN = 11, lh = 16, mg = 50, uw = 595.28 - mg * 2;
                     const lines = [];
-                    
                     notasAdicionales.split('\n').forEach(p => {
                         if (!p) { lines.push(''); return; }
                         const words = p.split(' ');
@@ -1055,39 +1112,21 @@
                         }
                         lines.push(line);
                     });
-                    
                     const makePage = (first) => {
                         const np = doc.addPage([595.28, 842.89]);
-                        np.drawText(first ? "ANEXO: Notas y Pasos Adicionales" : "ANEXO: Notas (Continuación)", { 
-                            x: mg, 
-                            y: np.getHeight() - 80, 
-                            size: 16, 
-                            font: fontBold, 
-                            color: rgb(0.1, 0.2, 0.4)
-                        });
-                        np.drawText(`Generado el: ${fecha}`, { 
-                            x: mg, 
-                            y: np.getHeight() - 100, 
-                            size: 10, 
-                            font: fontBold, 
-                            color: rgb(0.2, 0.35, 0.6)
-                        });
+                        np.drawText(first ? "ANEXO: Notas y Pasos Adicionales" : "ANEXO: Notas (Continuación)", { x: mg, y: np.getHeight() - 80, size: 16, font: fontBold, color: rgb(0.1, 0.2, 0.4) });
+                        np.drawText(`Generado el: ${fecha}`, { x: mg, y: np.getHeight() - 100, size: 10, font: fontBold, color: rgb(0.2, 0.35, 0.6) });
                         return { page: np, y: np.getHeight() - 140 };
                     };
-                    
                     let { page: cp, y: cy } = makePage(true);
                     lines.forEach(line => {
-                        if (cy < 60) {
-                            const n = makePage(false);
-                            cp = n.page;
-                            cy = n.y;
-                        }
+                        if (cy < 60) { const n = makePage(false); cp = n.page; cy = n.y; }
                         cp.drawText(line, { x: mg, y: cy, size: fsN, font: font, color: rgb(0, 0, 0) });
                         cy -= lh;
                     });
                 }
 
-                // ========== IMAGEN ==========
+                // Imagen
                 if (hayImagen && uploadedImageBytes) {
                     try {
                         let image;
@@ -1096,24 +1135,13 @@
                         } else if (uploadedImageType === 'image/jpeg' || uploadedImageType === 'image/jpg') {
                             image = await doc.embedJpg(uploadedImageBytes);
                         } else {
-                            // Intentar como PNG por defecto
-                            try {
-                                image = await doc.embedPng(uploadedImageBytes);
-                            } catch {
-                                image = await doc.embedJpg(uploadedImageBytes);
-                            }
+                            try { image = await doc.embedPng(uploadedImageBytes); } catch { image = await doc.embedJpg(uploadedImageBytes); }
                         }
                         const imgPage = doc.addPage([595.28, 842.89]);
                         const dims = image.scaleToFit(500, 700);
-                        imgPage.drawImage(image, { 
-                            x: (595.28 - dims.width) / 2, 
-                            y: (842.89 - dims.height) / 2, 
-                            width: dims.width, 
-                            height: dims.height 
-                        });
+                        imgPage.drawImage(image, { x: (595.28 - dims.width) / 2, y: (842.89 - dims.height) / 2, width: dims.width, height: dims.height });
                     } catch (imgError) {
                         console.warn("Error al incrustar imagen:", imgError);
-                        // Continuar sin la imagen
                     }
                 }
 
@@ -1124,7 +1152,7 @@
                 a.download = "BORRADOR_" + nombreArchivoOriginal;
                 a.click();
                 showNotification('✅ ¡Documento guardado exitosamente!', 'success');
-                
+
             } catch(e) {
                 console.error("Error detallado:", e);
                 alert("Error al generar el PDF: " + (e.message || "Error desconocido"));
@@ -1138,6 +1166,175 @@
             document.body.appendChild(n);
             setTimeout(() => { n.style.opacity='0'; n.style.transition='opacity 0.3s'; setTimeout(()=>n.remove(),300); }, 3000);
         }
+
+        // ============================================================
+        // INTEGRACIÓN CON DRAFTABLE (Comparar PDFs) - NUEVA VERSIÓN
+        // ============================================================
+        let leftFileSelected = null;
+        let rightFileSelected = null;
+
+        const leftFileInput = document.getElementById('leftFileInput');
+        const rightFileInput = document.getElementById('rightFileInput');
+        const leftFileNameDisplay = document.getElementById('leftFileName');
+        const rightFileNameDisplay = document.getElementById('rightFileName');
+        const leftSelector = document.getElementById('leftFileSelector');
+        const rightSelector = document.getElementById('rightFileSelector');
+        const btnExecuteCompare = document.getElementById('btnExecuteCompare');
+        const comparisonViewer = document.getElementById('comparisonViewer');
+        const comparisonPanel = document.getElementById('comparisonPanel');
+
+        // Manejar selección de archivo izquierdo
+        leftFileInput.addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if (file) {
+                leftFileSelected = file;
+                leftFileNameDisplay.textContent = file.name;
+                leftSelector.classList.add('has-file');
+                leftSelector.querySelector('.badge').style.display = 'flex';
+            } else {
+                leftFileSelected = null;
+                leftFileNameDisplay.textContent = 'Ningún archivo seleccionado';
+                leftSelector.classList.remove('has-file');
+                leftSelector.querySelector('.badge').style.display = 'none';
+            }
+            updateCompareButton();
+        });
+
+        // Manejar selección de archivo derecho
+        rightFileInput.addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if (file) {
+                rightFileSelected = file;
+                rightFileNameDisplay.textContent = file.name;
+                rightSelector.classList.add('has-file');
+                rightSelector.querySelector('.badge').style.display = 'flex';
+            } else {
+                rightFileSelected = null;
+                rightFileNameDisplay.textContent = 'Ningún archivo seleccionado';
+                rightSelector.classList.remove('has-file');
+                rightSelector.querySelector('.badge').style.display = 'none';
+            }
+            updateCompareButton();
+        });
+
+        function updateCompareButton() {
+            if (leftFileSelected && rightFileSelected) {
+                btnExecuteCompare.disabled = false;
+            } else {
+                btnExecuteCompare.disabled = true;
+            }
+        }
+
+        // Función para convertir archivo a Base64
+        async function fileToBase64(file) {
+            return new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.readAsDataURL(file);
+                reader.onload = () => {
+                    const base64String = reader.result.split(',')[1];
+                    resolve(base64String);
+                };
+                reader.onerror = (error) => reject(error);
+            });
+        }
+
+        // Crear comparación en Draftable
+        async function createDraftableComparison(leftFile, rightFile) {
+            const leftBase64 = await fileToBase64(leftFile);
+            const rightBase64 = await fileToBase64(rightFile);
+
+            const payload = {
+                left: {
+                    display_name: leftFile.name,
+                    file_content: leftBase64,
+                    file_type: 'pdf'
+                },
+                right: {
+                    display_name: rightFile.name,
+                    file_content: rightBase64,
+                    file_type: 'pdf'
+                },
+                public: false
+            };
+
+            const auth = btoa(DRAFTABLE_ACCOUNT_ID + ':' + DRAFTABLE_API_KEY);
+
+            const response = await fetch('https://api.draftable.com/v1/comparisons', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Basic ${auth}`
+                },
+                body: JSON.stringify(payload)
+            });
+
+            if (!response.ok) {
+                const errorText = await response.text();
+                throw new Error(`Error al crear la comparación: ${response.status} - ${errorText}`);
+            }
+
+            const data = await response.json();
+            return data.viewer_url;
+        }
+
+        // Ejecutar comparación
+        btnExecuteCompare.addEventListener('click', async function() {
+            if (!leftFileSelected || !rightFileSelected) {
+                alert('Selecciona ambos PDFs.');
+                return;
+            }
+
+            // Mostrar mensaje de carga dentro del panel
+            comparisonViewer.style.display = 'none';
+            const loadingMsg = document.createElement('div');
+            loadingMsg.id = 'loadingCompareMsg';
+            loadingMsg.textContent = '⏳ Creando comparación, esto puede tomar unos segundos...';
+            loadingMsg.style.cssText = 'padding:20px;text-align:center;font-weight:bold;';
+            comparisonPanel.appendChild(loadingMsg);
+
+            try {
+                const viewerUrl = await createDraftableComparison(leftFileSelected, rightFileSelected);
+                comparisonViewer.src = viewerUrl;
+                comparisonViewer.style.display = 'block';
+                // Remover mensaje de carga
+                const msg = document.getElementById('loadingCompareMsg');
+                if (msg) msg.remove();
+                showNotification('Comparación lista', 'success');
+            } catch (error) {
+                console.error('Error en la comparación:', error);
+                alert('Hubo un error al comparar los documentos. Revisa la consola para más detalles.');
+                comparisonViewer.style.display = 'none';
+                const msg = document.getElementById('loadingCompareMsg');
+                if (msg) msg.remove();
+            }
+        });
+
+        // Mostrar/ocultar panel de comparación
+        document.getElementById('btnComparar').addEventListener('click', function() {
+            comparisonPanel.style.display = 'block';
+            // Cerrar cualquier visor previo
+            comparisonViewer.style.display = 'none';
+            comparisonViewer.src = '';
+            // Reiniciar selecciones si se desea (opcional)
+            // leftFileInput.value = ''; rightFileInput.value = ''; etc.
+        });
+
+        document.getElementById('btnCerrarComparacion').addEventListener('click', function() {
+            comparisonPanel.style.display = 'none';
+            comparisonViewer.style.display = 'none';
+            comparisonViewer.src = '';
+            // Resetear estados visuales (opcional)
+            // leftFileSelected = null; rightFileSelected = null;
+            // leftFileNameDisplay.textContent = 'Ningún archivo seleccionado';
+            // rightFileNameDisplay.textContent = 'Ningún archivo seleccionado';
+            // leftSelector.classList.remove('has-file'); rightSelector.classList.remove('has-file');
+            // leftSelector.querySelector('.badge').style.display = 'none';
+            // rightSelector.querySelector('.badge').style.display = 'none';
+            // updateCompareButton();
+        });
+
+        // Inicializar estado del botón
+        updateCompareButton();
     </script>
 </body>
 </html>
