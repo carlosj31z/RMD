@@ -11,7 +11,7 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
 
     <style>
-        /* ===== ESTILOS COMPLETOS ===== */
+        /* ===== ESTILOS COMPLETOS (los mismos de antes) ===== */
         :root {
             --primary: #6366f1;
             --primary-dark: #4f46e5;
@@ -1168,7 +1168,7 @@
         }
 
         // ============================================================
-        // INTEGRACIÓN CON DRAFTABLE (Comparar PDFs) - NUEVA VERSIÓN
+        // INTEGRACIÓN CON DRAFTABLE - CON DEPURACIÓN MEJORADA
         // ============================================================
         let leftFileSelected = null;
         let rightFileSelected = null;
@@ -1218,63 +1218,93 @@
         });
 
         function updateCompareButton() {
-            if (leftFileSelected && rightFileSelected) {
-                btnExecuteCompare.disabled = false;
-            } else {
-                btnExecuteCompare.disabled = true;
-            }
+            btnExecuteCompare.disabled = !(leftFileSelected && rightFileSelected);
         }
 
-        // Función para convertir archivo a Base64
+        // Función para convertir archivo a Base64 (sin prefijo)
         async function fileToBase64(file) {
             return new Promise((resolve, reject) => {
                 const reader = new FileReader();
                 reader.readAsDataURL(file);
                 reader.onload = () => {
-                    const base64String = reader.result.split(',')[1];
-                    resolve(base64String);
+                    // Extraer solo la parte base64 (después de la coma)
+                    const base64 = reader.result.split(',')[1];
+                    resolve(base64);
                 };
                 reader.onerror = (error) => reject(error);
             });
         }
 
-        // Crear comparación en Draftable
+        // Crear comparación en Draftable con manejo de errores detallado
         async function createDraftableComparison(leftFile, rightFile) {
-            const leftBase64 = await fileToBase64(leftFile);
-            const rightBase64 = await fileToBase64(rightFile);
+            try {
+                // Convertir a base64
+                const leftBase64 = await fileToBase64(leftFile);
+                const rightBase64 = await fileToBase64(rightFile);
 
-            const payload = {
-                left: {
-                    display_name: leftFile.name,
-                    file_content: leftBase64,
-                    file_type: 'pdf'
-                },
-                right: {
-                    display_name: rightFile.name,
-                    file_content: rightBase64,
-                    file_type: 'pdf'
-                },
-                public: false
-            };
+                // Validar tamaño (Draftable acepta hasta 20 MB)
+                const maxSize = 20 * 1024 * 1024; // 20 MB
+                if (leftFile.size > maxSize || rightFile.size > maxSize) {
+                    throw new Error('Uno de los archivos supera el límite de 20 MB.');
+                }
 
-            const auth = btoa(DRAFTABLE_ACCOUNT_ID + ':' + DRAFTABLE_API_KEY);
+                const payload = {
+                    left: {
+                        display_name: leftFile.name,
+                        file_content: leftBase64,
+                        file_type: 'pdf'
+                    },
+                    right: {
+                        display_name: rightFile.name,
+                        file_content: rightBase64,
+                        file_type: 'pdf'
+                    },
+                    public: false
+                };
 
-            const response = await fetch('https://api.draftable.com/v1/comparisons', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Basic ${auth}`
-                },
-                body: JSON.stringify(payload)
-            });
+                // Autenticación: Basic Auth con account_id + ':' + auth_token
+                const auth = btoa(DRAFTABLE_ACCOUNT_ID + ':' + DRAFTABLE_API_KEY);
 
-            if (!response.ok) {
-                const errorText = await response.text();
-                throw new Error(`Error al crear la comparación: ${response.status} - ${errorText}`);
+                console.log('Enviando solicitud a Draftable...');
+                console.log('Payload:', payload);
+
+                const response = await fetch('https://api.draftable.com/v1/comparisons', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Basic ${auth}`
+                    },
+                    body: JSON.stringify(payload)
+                });
+
+                // Leer la respuesta (incluso si no es OK) para depuración
+                const responseText = await response.text();
+                let responseData = null;
+                try {
+                    responseData = JSON.parse(responseText);
+                } catch (e) {
+                    responseData = { raw: responseText };
+                }
+
+                console.log('Respuesta de Draftable:', response.status, responseData);
+
+                if (!response.ok) {
+                    let errorMsg = `Error ${response.status}`;
+                    if (responseData && responseData.message) {
+                        errorMsg += `: ${responseData.message}`;
+                    } else if (responseData && responseData.raw) {
+                        errorMsg += `: ${responseData.raw}`;
+                    } else {
+                        errorMsg += `: ${responseText}`;
+                    }
+                    throw new Error(errorMsg);
+                }
+
+                return responseData.viewer_url;
+            } catch (error) {
+                console.error('Error en createDraftableComparison:', error);
+                throw error; // Re-lanzar para que lo maneje el caller
             }
-
-            const data = await response.json();
-            return data.viewer_url;
         }
 
         // Ejecutar comparación
@@ -1283,6 +1313,10 @@
                 alert('Selecciona ambos PDFs.');
                 return;
             }
+
+            // Deshabilitar botón para evitar múltiples clics
+            btnExecuteCompare.disabled = true;
+            btnExecuteCompare.textContent = '⏳ Procesando...';
 
             // Mostrar mensaje de carga dentro del panel
             comparisonViewer.style.display = 'none';
@@ -1299,13 +1333,18 @@
                 // Remover mensaje de carga
                 const msg = document.getElementById('loadingCompareMsg');
                 if (msg) msg.remove();
-                showNotification('Comparación lista', 'success');
+                showNotification('✅ Comparación lista', 'success');
             } catch (error) {
                 console.error('Error en la comparación:', error);
-                alert('Hubo un error al comparar los documentos. Revisa la consola para más detalles.');
+                // Mostrar error detallado en la alerta
+                alert(`❌ Error al comparar documentos:\n${error.message || 'Error desconocido'}\n\nRevisa la consola para más detalles.`);
                 comparisonViewer.style.display = 'none';
                 const msg = document.getElementById('loadingCompareMsg');
                 if (msg) msg.remove();
+            } finally {
+                // Restaurar botón
+                btnExecuteCompare.disabled = false;
+                btnExecuteCompare.innerHTML = '<i class="fa-solid fa-play"></i> Comparar';
             }
         });
 
@@ -1315,22 +1354,12 @@
             // Cerrar cualquier visor previo
             comparisonViewer.style.display = 'none';
             comparisonViewer.src = '';
-            // Reiniciar selecciones si se desea (opcional)
-            // leftFileInput.value = ''; rightFileInput.value = ''; etc.
         });
 
         document.getElementById('btnCerrarComparacion').addEventListener('click', function() {
             comparisonPanel.style.display = 'none';
             comparisonViewer.style.display = 'none';
             comparisonViewer.src = '';
-            // Resetear estados visuales (opcional)
-            // leftFileSelected = null; rightFileSelected = null;
-            // leftFileNameDisplay.textContent = 'Ningún archivo seleccionado';
-            // rightFileNameDisplay.textContent = 'Ningún archivo seleccionado';
-            // leftSelector.classList.remove('has-file'); rightSelector.classList.remove('has-file');
-            // leftSelector.querySelector('.badge').style.display = 'none';
-            // rightSelector.querySelector('.badge').style.display = 'none';
-            // updateCompareButton();
         });
 
         // Inicializar estado del botón
