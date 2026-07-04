@@ -111,7 +111,6 @@
             position: relative;
         }
 
-        /* ===== ILUMINACIÓN AUMENTADA ===== */
         .toolbar::before {
             content: '';
             position: absolute;
@@ -607,6 +606,18 @@
         const toolbarToggle = document.getElementById('toolbarToggle');
         let isToolbarMinimized = false;
 
+        // ========== FUNCIÓN PARA SANITIZAR TEXTO (WinAnsi) ==========
+        function sanitizeTextForPDF(text) {
+            if (!text) return '';
+            // Reemplazar saltos de línea y caracteres especiales
+            return text
+                .replace(/\n/g, ' ')        // saltos de línea → espacio
+                .replace(/\r/g, ' ')        // retorno de carro → espacio
+                .replace(/\t/g, ' ')        // tabs → espacio
+                .replace(/[^\x20-\x7E\u00A0-\u00FF]/g, '') // solo caracteres ASCII imprimibles + Latin-1
+                .trim();
+        }
+
         // ========== DRAG & DROP ==========
         const dropOverlay = document.getElementById('dropOverlay');
         document.addEventListener('dragover', (e) => {
@@ -723,17 +734,14 @@
             const rect = range.getBoundingClientRect();
             const viewerRect = annotationsLayer.getBoundingClientRect();
             
-            // Obtener coordenadas relativas al visor
             let x = rect.left - viewerRect.left;
             let y = rect.top - viewerRect.top;
             let width = rect.width;
             let height = rect.height;
             
-            // Limitar dimensiones para evitar problemas con textos multilínea
+            // Limitar dimensiones
             width = Math.min(width, viewerRect.width * 0.8);
             height = Math.min(height, viewerRect.height * 0.3);
-            
-            // Asegurar que las coordenadas sean válidas
             x = Math.max(0, x);
             y = Math.max(0, y);
             width = Math.max(1, width);
@@ -756,10 +764,8 @@
             let width = rect.width;
             let height = rect.height;
             
-            // Limitar dimensiones para evitar problemas con textos multilínea
             width = Math.min(width, viewerRect.width * 0.8);
             height = Math.min(height, viewerRect.height * 0.3);
-            
             x = Math.max(0, x);
             y = Math.max(0, y);
             width = Math.max(1, width);
@@ -981,16 +987,19 @@
                     const h = p.getHeight();
                     const xA = 45, yA = h - 85, yF = h - 105;
                     
+                    // Sanitizar autor
+                    const autorSanitizado = sanitizeTextForPDF(elaboradoPor);
+                    
                     p.drawRectangle({ 
                         x: xA-4, 
                         y: yA-4, 
-                        width: fontBold.widthOfTextAtSize(elaboradoPor, 12) + 10, 
+                        width: fontBold.widthOfTextAtSize(autorSanitizado, 12) + 10, 
                         height: 20, 
                         color: rgb(0.95, 0.97, 1), 
                         opacity: 0.25
                     });
                     
-                    p.drawText(elaboradoPor, { 
+                    p.drawText(autorSanitizado, { 
                         x: xA, 
                         y: yA, 
                         size: 12, 
@@ -1025,19 +1034,22 @@
                     const pageH = page.getHeight();
                     
                     marcas.forEach(m => {
-                        // Limitar valores para evitar errores
-                        const xR = Math.max(0, m.x / scale);
-                        const wR = Math.max(1, Math.min(m.width / scale, page.getWidth() * 0.8));
+                        // SANITIZAR TEXTO - ELIMINAR SALTOS DE LÍNEA Y CARACTERES ESPECIALES
+                        const textoSanitizado = sanitizeTextForPDF(m.newText);
+                        if (!textoSanitizado) return;
+                        
+                        const xR = Math.max(0, Math.min(m.x / scale, page.getWidth() * 0.9));
+                        const wR = Math.max(1, Math.min(m.width / scale, page.getWidth() * 0.9));
                         const hR = Math.max(1, Math.min(m.height / scale, page.getHeight() * 0.3));
-                        const yTop = Math.max(0, pageH - (m.y / scale));
+                        const yTop = Math.max(0, Math.min(pageH - (m.y / scale), pageH));
                         const yCenter = Math.max(0, yTop - (hR / 2));
                         const fs = Math.max(6, Math.min(hR * 0.75, 24));
-                        const tw = font.widthOfTextAtSize(m.newText, fs);
+                        const tw = font.widthOfTextAtSize(textoSanitizado, fs);
                         
                         // Línea tachada en ROJO
                         page.drawLine({ 
                             start: {x: xR, y: yCenter}, 
-                            end: {x: xR + wR, y: yCenter}, 
+                            end: {x: Math.min(xR + wR, page.getWidth() * 0.95), y: yCenter}, 
                             thickness: 1.5, 
                             color: rgb(1, 0, 0)
                         });
@@ -1047,12 +1059,12 @@
                             page.drawRectangle({ 
                                 x: xR - 1, 
                                 y: yTop - hR, 
-                                width: Math.min(tw + 4, page.getWidth() * 0.8), 
+                                width: Math.min(tw + 4, page.getWidth() * 0.9), 
                                 height: hR, 
                                 color: rgb(1, 1, 1), 
                                 opacity: 0.65 
                             });
-                            page.drawText(m.newText, { 
+                            page.drawText(textoSanitizado, { 
                                 x: xR, 
                                 y: yCenter - (fs * 0.25), 
                                 size: fs, 
@@ -1071,7 +1083,10 @@
                     const uw = 595.28 - mg * 2;
                     const lines = [];
                     
-                    notasAdicionales.split('\n').forEach(p => {
+                    // Sanitizar notas
+                    const notasSanitizadas = sanitizeTextForPDF(notasAdicionales);
+                    
+                    notasSanitizadas.split('\n').forEach(p => {
                         if (!p) { lines.push(''); return; }
                         const words = p.split(' ');
                         let line = words[0] || '';
@@ -1112,7 +1127,10 @@
                             cp = n.page;
                             cy = n.y;
                         }
-                        cp.drawText(line, { x: mg, y: cy, size: fsN, font: font, color: rgb(0, 0, 0) });
+                        const lineSanitizada = sanitizeTextForPDF(line);
+                        if (lineSanitizada) {
+                            cp.drawText(lineSanitizada, { x: mg, y: cy, size: fsN, font: font, color: rgb(0, 0, 0) });
+                        }
                         cy -= lh;
                     });
                 }
