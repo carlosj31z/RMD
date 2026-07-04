@@ -7,7 +7,7 @@
     
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600&family=Playfair+Display:wght@400;700;900&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     
     <style>
@@ -111,36 +111,55 @@
             position: relative;
         }
 
-        /* Iluminación tenue y elegante */
+        /* ===== ILUMINACIÓN AUMENTADA ===== */
         .toolbar::before {
             content: '';
             position: absolute;
-            inset: -2px;
-            border-radius: calc(var(--radius-xl) + 2px);
-            padding: 2px;
-            background: linear-gradient(135deg, rgba(99,102,241,0.15), rgba(236,72,153,0.08), rgba(16,185,129,0.08));
+            inset: -3px;
+            border-radius: calc(var(--radius-xl) + 3px);
+            padding: 3px;
+            background: linear-gradient(135deg, rgba(99,102,241,0.35), rgba(236,72,153,0.2), rgba(16,185,129,0.15), rgba(99,102,241,0.35));
             -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
             -webkit-mask-composite: xor;
             mask-composite: exclude;
             pointer-events: none;
-            opacity: 0.7;
+            opacity: 0.9;
             transition: opacity var(--transition-slow);
+            animation: glowPulseToolbar 3s ease-in-out infinite;
+        }
+
+        @keyframes glowPulseToolbar {
+            0%, 100% { opacity: 0.7; }
+            50% { opacity: 1; }
         }
 
         .toolbar::after {
             content: '';
             position: absolute;
-            inset: -4px;
-            border-radius: calc(var(--radius-xl) + 4px);
-            background: radial-gradient(circle at 30% 20%, rgba(99,102,241,0.06), transparent 60%),
-                        radial-gradient(circle at 70% 80%, rgba(236,72,153,0.04), transparent 50%);
+            inset: -6px;
+            border-radius: calc(var(--radius-xl) + 6px);
+            background: 
+                radial-gradient(circle at 20% 30%, rgba(99,102,241,0.15), transparent 50%),
+                radial-gradient(circle at 80% 70%, rgba(236,72,153,0.12), transparent 45%),
+                radial-gradient(circle at 50% 50%, rgba(16,185,129,0.08), transparent 60%);
             pointer-events: none;
-            opacity: 0;
+            opacity: 0.6;
             transition: opacity var(--transition-slow);
+            animation: glowAmbient 4s ease-in-out infinite alternate;
+        }
+
+        @keyframes glowAmbient {
+            0% { opacity: 0.4; transform: scale(1); }
+            100% { opacity: 0.8; transform: scale(1.02); }
+        }
+
+        .toolbar:hover::before {
+            opacity: 1;
+            animation-duration: 1.5s;
         }
 
         .toolbar:hover::after {
-            opacity: 1;
+            opacity: 0.9;
         }
 
         .toolbar.maximized { padding: 18px 24px 16px; }
@@ -913,56 +932,59 @@
                 const pages = doc.getPages();
                 const font = await doc.embedFont(StandardFonts.Helvetica);
                 const fontBold = await doc.embedFont(StandardFonts.HelveticaBold);
+                
+                // Fuente elegante para autor y fecha (usamos HelveticaBold que es limpia y elegante)
+                // También podríamos usar TimesRomanBold para un estilo más clásico
+                const fontElegante = await doc.embedFont(StandardFonts.HelveticaBold);
+                
                 const now = new Date();
                 const fecha = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-${String(now.getDate()).padStart(2,'0')}`;
 
-                // ========== MEJORA: Autor y Fecha en AZUL con estilo elegante ==========
+                // ========== AUTOR Y FECHA - SIN BORDE DE COLOR ==========
                 if (elaboradoPor) {
                     const p = pages[0];
                     if (p) {
                         const h = p.getHeight();
                         const xA = 45, yA = h - 85, yF = h - 105;
                         
-                        // Fondo sutil para el autor
+                        // Fondo sutil transparente para el autor (sin borde de color)
                         p.drawRectangle({ 
                             x: xA-4, 
                             y: yA-4, 
-                            width: fontBold.widthOfTextAtSize(elaboradoPor, 12) + 10, 
-                            height: 18, 
-                            color: rgb(0.9, 0.95, 1), 
-                            opacity: 0.3,
-                            borderColor: rgb(0.2, 0.4, 0.8),
-                            borderWidth: 0.5
+                            width: fontElegante.widthOfTextAtSize(elaboradoPor, 12) + 10, 
+                            height: 20, 
+                            color: rgb(0.95, 0.97, 1), 
+                            opacity: 0.25
+                            // Sin borderColor ni borderWidth
                         });
                         
-                        // Texto del autor en AZUL con estilo bold
+                        // Texto del autor en NEGRITA con fuente elegante
                         p.drawText(elaboradoPor, { 
                             x: xA, 
                             y: yA, 
                             size: 12, 
-                            font: fontBold, 
-                            color: rgb(0.15, 0.35, 0.75) // Azul elegante
+                            font: fontElegante, 
+                            color: rgb(0.1, 0.2, 0.4) // Azul oscuro elegante
                         });
                         
-                        // Fondo sutil para la fecha
+                        // Fondo sutil para la fecha (sin borde de color)
                         p.drawRectangle({ 
                             x: xA-4, 
                             y: yF-4, 
-                            width: font.widthOfTextAtSize(fecha, 10) + 10, 
-                            height: 16, 
-                            color: rgb(0.9, 0.95, 1), 
-                            opacity: 0.25,
-                            borderColor: rgb(0.3, 0.5, 0.8),
-                            borderWidth: 0.3
+                            width: fontElegante.widthOfTextAtSize(fecha, 10) + 10, 
+                            height: 18, 
+                            color: rgb(0.95, 0.97, 1), 
+                            opacity: 0.2
+                            // Sin borderColor ni borderWidth
                         });
                         
-                        // Fecha en AZUL con estilo más delicado
+                        // Fecha en NEGRITA con fuente elegante
                         p.drawText(fecha, { 
                             x: xA, 
                             y: yF, 
                             size: 10, 
-                            font: font, 
-                            color: rgb(0.2, 0.4, 0.7) // Azul más suave
+                            font: fontElegante, 
+                            color: rgb(0.2, 0.35, 0.6) // Azul más suave pero en negrita
                         });
                     }
                 }
@@ -981,7 +1003,7 @@
                             start: {x:xR, y:yCenter}, 
                             end: {x:xR+wR, y:yCenter}, 
                             thickness: 1.5, 
-                            color: rgb(1, 0, 0) // Rojo puro
+                            color: rgb(1, 0, 0)
                         });
                         
                         // Solo para reemplazos: mostrar el nuevo texto en verde
@@ -1002,7 +1024,6 @@
                                 color: rgb(0, 0.45, 0) 
                             });
                         }
-                        // Para delete: solo el tachado, sin texto adicional
                     });
                 }
 
@@ -1025,15 +1046,15 @@
                             x: mg, 
                             y: np.getHeight()-80, 
                             size: 16, 
-                            font: fontBold, 
-                            color: rgb(0.15, 0.35, 0.75) // Azul elegante para el título
+                            font: fontElegante, 
+                            color: rgb(0.1, 0.2, 0.4)
                         });
                         np.drawText(`Generado el: ${fecha}`, { 
                             x: mg, 
                             y: np.getHeight()-100, 
                             size: 10, 
-                            font, 
-                            color: rgb(0.2, 0.4, 0.7) // Azul suave para la fecha
+                            font: fontElegante, 
+                            color: rgb(0.2, 0.35, 0.6)
                         });
                         return { page: np, y: np.getHeight()-140 };
                     };
