@@ -168,7 +168,7 @@
         }
         .toolbar-toggle:hover { background: var(--gray-lighter); opacity: 1; transform: rotate(180deg); }
         .toolbar.minimized .toolbar-toggle { 
-            display: none; /* Oculto cuando está minimizado por scroll */
+            display: none;
         }
 
         .toolbar-content {
@@ -385,7 +385,7 @@
         .delete-btn { position: absolute; right: -12px; top: -12px; background: var(--danger); color: white; border-radius: 50%; width: 20px; height: 20px; font-size: 10px; border: none; cursor: pointer; display: flex; align-items: center; justify-content: center; padding: 0; box-shadow: 0 2px 8px rgba(239,68,68,0.4); transition: all var(--transition); z-index: 6; border: 2px solid white; }
         .delete-btn:hover { background: var(--danger-dark); transform: scale(1.2); box-shadow: 0 4px 14px rgba(239,68,68,0.55); }
 
-        /* ========== NOTES WIDGET - más cerca del PDF ========== */
+        /* ========== NOTES WIDGET ========== */
         .notes-widget {
             position: fixed;
             right: 20px;
@@ -616,12 +616,10 @@
             }
         });
 
-        // Scroll auto-minimiza sin botón de maximizar
         window.addEventListener('scroll', () => {
             if (window.scrollY > 100 && !isToolbarMinimized) {
                 isToolbarMinimized = true;
                 mainToolbar.classList.remove('maximized'); mainToolbar.classList.add('minimized');
-                // No cambiamos el icono del toggle porque está oculto
             }
         });
 
@@ -818,7 +816,6 @@
                 div.className = 'correction-mark';
                 div.style.cssText = `left:${marca.x}px;top:${marca.y}px;width:${marca.width}px;height:${marca.height}px;`;
                 if (marca.type === 'delete') {
-                    // Solo tachado en rojo, sin texto rojo sobrescrito
                     div.innerHTML = `<div class="strike-line"></div><div class="new-text-label deleted-text">${marca.newText}</div><button class="delete-btn" onclick="borrarAnotacion(${marca.id},${num})"><i class="fa-solid fa-xmark"></i></button>`;
                 } else {
                     div.innerHTML = `<div class="strike-line"></div><div class="new-text-label" onclick="editarAnotacion(${marca.id},${num})">${marca.newText}</div><button class="delete-btn" onclick="borrarAnotacion(${marca.id},${num})"><i class="fa-solid fa-xmark"></i></button>`;
@@ -915,21 +912,62 @@
                 const doc = await PDFDocument.load(pdfBytesOriginal);
                 const pages = doc.getPages();
                 const font = await doc.embedFont(StandardFonts.Helvetica);
+                const fontBold = await doc.embedFont(StandardFonts.HelveticaBold);
                 const now = new Date();
                 const fecha = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-${String(now.getDate()).padStart(2,'0')}`;
 
+                // ========== MEJORA: Autor y Fecha en AZUL con estilo elegante ==========
                 if (elaboradoPor) {
                     const p = pages[0];
                     if (p) {
                         const h = p.getHeight();
                         const xA = 45, yA = h - 85, yF = h - 105;
-                        p.drawRectangle({ x: xA-2, y: yA-2, width: font.widthOfTextAtSize(elaboradoPor,14)+4, height: 16, color: rgb(1,1,1), opacity: 0.7 });
-                        p.drawText(elaboradoPor, { x: xA, y: yA, size: 14, font, color: rgb(0,0.5,0) });
-                        p.drawRectangle({ x: xA-2, y: yF-2, width: font.widthOfTextAtSize(fecha,12)+4, height: 14, color: rgb(1,1,1), opacity: 0.7 });
-                        p.drawText(fecha, { x: xA, y: yF, size: 12, font, color: rgb(0.3,0.3,0.3) });
+                        
+                        // Fondo sutil para el autor
+                        p.drawRectangle({ 
+                            x: xA-4, 
+                            y: yA-4, 
+                            width: fontBold.widthOfTextAtSize(elaboradoPor, 12) + 10, 
+                            height: 18, 
+                            color: rgb(0.9, 0.95, 1), 
+                            opacity: 0.3,
+                            borderColor: rgb(0.2, 0.4, 0.8),
+                            borderWidth: 0.5
+                        });
+                        
+                        // Texto del autor en AZUL con estilo bold
+                        p.drawText(elaboradoPor, { 
+                            x: xA, 
+                            y: yA, 
+                            size: 12, 
+                            font: fontBold, 
+                            color: rgb(0.15, 0.35, 0.75) // Azul elegante
+                        });
+                        
+                        // Fondo sutil para la fecha
+                        p.drawRectangle({ 
+                            x: xA-4, 
+                            y: yF-4, 
+                            width: font.widthOfTextAtSize(fecha, 10) + 10, 
+                            height: 16, 
+                            color: rgb(0.9, 0.95, 1), 
+                            opacity: 0.25,
+                            borderColor: rgb(0.3, 0.5, 0.8),
+                            borderWidth: 0.3
+                        });
+                        
+                        // Fecha en AZUL con estilo más delicado
+                        p.drawText(fecha, { 
+                            x: xA, 
+                            y: yF, 
+                            size: 10, 
+                            font: font, 
+                            color: rgb(0.2, 0.4, 0.7) // Azul más suave
+                        });
                     }
                 }
 
+                // ========== ANOTACIONES: Solo tachado rojo para borrados ==========
                 for (const [num, marcas] of Object.entries(annotationsData)) {
                     const page = pages[parseInt(num)-1];
                     const pageH = page.getHeight();
@@ -937,18 +975,39 @@
                         const xR = m.x/scale, wR = m.width/scale, hR = m.height/scale;
                         const yTop = pageH - (m.y/scale), yCenter = yTop - (hR/2);
                         const fs = hR * 0.75, tw = font.widthOfTextAtSize(m.newText, fs);
-                        // Solo tachado en rojo, sin texto rojo
-                        page.drawLine({ start: {x:xR, y:yCenter}, end: {x:xR+wR, y:yCenter}, thickness: 1, color: rgb(1,0,0) });
+                        
+                        // Línea tachada en ROJO siempre
+                        page.drawLine({ 
+                            start: {x:xR, y:yCenter}, 
+                            end: {x:xR+wR, y:yCenter}, 
+                            thickness: 1.5, 
+                            color: rgb(1, 0, 0) // Rojo puro
+                        });
+                        
+                        // Solo para reemplazos: mostrar el nuevo texto en verde
                         if (m.type === 'replace') {
-                            page.drawRectangle({ x: xR-1, y: yTop-hR, width: tw+2, height: hR, color: rgb(1,1,1), opacity: 0.65 });
-                            page.drawText(m.newText, { x: xR, y: yCenter-(fs*0.25), size: fs, font, color: rgb(0,0.45,0) });
+                            page.drawRectangle({ 
+                                x: xR-1, 
+                                y: yTop-hR, 
+                                width: tw+2, 
+                                height: hR, 
+                                color: rgb(1, 1, 1), 
+                                opacity: 0.65 
+                            });
+                            page.drawText(m.newText, { 
+                                x: xR, 
+                                y: yCenter-(fs*0.25), 
+                                size: fs, 
+                                font, 
+                                color: rgb(0, 0.45, 0) 
+                            });
                         }
                         // Para delete: solo el tachado, sin texto adicional
                     });
                 }
 
+                // ========== NOTAS ADICIONALES ==========
                 if (notasAdicionales) {
-                    const fontB = await doc.embedFont(StandardFonts.HelveticaBold);
                     const fsN = 11, lh = 16, mg = 50, uw = 595.28 - mg*2;
                     const lines = [];
                     notasAdicionales.split('\n').forEach(p => {
@@ -962,14 +1021,31 @@
                     });
                     const makePage = (first) => {
                         const np = doc.addPage([595.28, 842.89]);
-                        np.drawText(first?"ANEXO: Notas y Pasos Adicionales":"ANEXO: Notas (Continuación)", { x: mg, y: np.getHeight()-80, size: 16, font: fontB, color: rgb(0,0,0) });
-                        np.drawText(`Generado el: ${fecha}`, { x: mg, y: np.getHeight()-100, size: 10, font, color: rgb(0.3,0.3,0.3) });
+                        np.drawText(first?"ANEXO: Notas y Pasos Adicionales":"ANEXO: Notas (Continuación)", { 
+                            x: mg, 
+                            y: np.getHeight()-80, 
+                            size: 16, 
+                            font: fontBold, 
+                            color: rgb(0.15, 0.35, 0.75) // Azul elegante para el título
+                        });
+                        np.drawText(`Generado el: ${fecha}`, { 
+                            x: mg, 
+                            y: np.getHeight()-100, 
+                            size: 10, 
+                            font, 
+                            color: rgb(0.2, 0.4, 0.7) // Azul suave para la fecha
+                        });
                         return { page: np, y: np.getHeight()-140 };
                     };
                     let { page: cp, y: cy } = makePage(true);
-                    lines.forEach(line => { if (cy<60) { const n=makePage(false); cp=n.page; cy=n.y; } cp.drawText(line,{x:mg,y:cy,size:fsN,font,color:rgb(0,0,0)}); cy-=lh; });
+                    lines.forEach(line => { 
+                        if (cy<60) { const n=makePage(false); cp=n.page; cy=n.y; } 
+                        cp.drawText(line, { x: mg, y: cy, size: fsN, font, color: rgb(0, 0, 0) }); 
+                        cy-=lh; 
+                    });
                 }
 
+                // ========== IMAGEN ==========
                 if (hayImagen) {
                     let image;
                     if (uploadedImageType === 'image/png') image = await doc.embedPng(uploadedImageBytes);
@@ -977,7 +1053,12 @@
                     else image = await doc.embedPng(uploadedImageBytes);
                     const imgPage = doc.addPage([595.28, 842.89]);
                     const dims = image.scaleToFit(500, 700);
-                    imgPage.drawImage(image, { x: (595.28 - dims.width) / 2, y: (842.89 - dims.height) / 2, width: dims.width, height: dims.height });
+                    imgPage.drawImage(image, { 
+                        x: (595.28 - dims.width) / 2, 
+                        y: (842.89 - dims.height) / 2, 
+                        width: dims.width, 
+                        height: dims.height 
+                    });
                 }
 
                 const bytes = await doc.save();
