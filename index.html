@@ -756,6 +756,7 @@
             display: block;
         }
 
+        /* CAPA DE TEXTO MEJORADA PARA VISUALIZAR SELECCIÓN */
         #text-layer {
             position: absolute;
             left: 0;
@@ -763,23 +764,35 @@
             right: 0;
             bottom: 0;
             overflow: hidden;
-            opacity: 0.2;
+            opacity: 0.4;
             line-height: 1;
+            z-index: 2;
         }
 
-        #text-layer>span {
+        #text-layer > span {
             color: transparent;
             position: absolute;
             white-space: pre;
             cursor: text;
             transform-origin: 0% 0%;
+            user-select: text;
+            -webkit-user-select: text;
+            -moz-user-select: text;
+            -ms-user-select: text;
         }
 
         #text-layer ::selection {
-            background: rgba(102, 126, 234, 0.4);
-            color: transparent;
+            background: rgba(0, 123, 255, 0.5) !important;
+            color: rgba(0, 0, 0, 0.1) !important;
+            border-radius: 2px;
         }
 
+        #text-layer ::-moz-selection {
+            background: rgba(0, 123, 255, 0.5) !important;
+            color: rgba(0, 0, 0, 0.1) !important;
+        }
+
+        /* CAPA DE ANOTACIONES */
         #annotations-layer {
             position: absolute;
             left: 0;
@@ -787,11 +800,13 @@
             right: 0;
             bottom: 0;
             pointer-events: none;
+            z-index: 3;
         }
 
         .correction-mark {
             position: absolute;
             pointer-events: auto;
+            z-index: 4;
         }
 
         .strike-line {
@@ -805,68 +820,71 @@
         }
 
         .new-text-label {
-            color: #1a6b2a;
+            color: #155724;
             font-weight: 700;
             font-size: 13px;
             position: absolute;
-            top: -20px;
+            top: 50%;
             left: 0;
-            background: rgba(255, 255, 255, 0.92);
-            padding: 4px 10px;
+            transform: translateY(-50%);
+            background: rgba(255, 255, 255, 0.95);
+            padding: 3px 8px;
             border: 2px solid #28a745;
             border-radius: 6px;
             white-space: nowrap;
             cursor: pointer;
             transition: all 0.3s ease;
-            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
-            backdrop-filter: blur(5px);
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+            backdrop-filter: blur(8px);
             z-index: 5;
+            line-height: 1.2;
         }
 
         .new-text-label.deleted-text {
             border-color: #dc3545;
-            color: #dc3545;
+            color: #721c24;
             font-style: italic;
             text-decoration: line-through;
+            background: rgba(255, 235, 238, 0.95);
         }
 
         .new-text-label:hover {
-            background: rgba(212, 237, 218, 0.95);
+            background: rgba(212, 237, 218, 0.98);
             border-color: #1e7e34;
-            transform: translateY(-1px);
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+            transform: translateY(-50%) scale(1.02);
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
         }
 
         .new-text-label.deleted-text:hover {
-            background: rgba(248, 215, 218, 0.95);
+            background: rgba(248, 215, 218, 0.98);
             border-color: #c82333;
         }
 
         .delete-btn {
             position: absolute;
-            right: -25px;
-            top: -18px;
+            right: -12px;
+            top: -12px;
             background: #dc3545;
             color: white;
             border-radius: 50%;
-            width: 22px;
-            height: 22px;
-            font-size: 12px;
+            width: 20px;
+            height: 20px;
+            font-size: 11px;
             border: none;
             cursor: pointer;
             display: flex;
             align-items: center;
             justify-content: center;
             padding: 0;
-            box-shadow: 0 2px 8px rgba(220, 53, 69, 0.3);
+            box-shadow: 0 2px 8px rgba(220, 53, 69, 0.4);
             transition: all 0.3s ease;
             z-index: 6;
         }
 
         .delete-btn:hover {
             background: #c82333;
-            transform: scale(1.1);
-            box-shadow: 0 4px 12px rgba(220, 53, 69, 0.5);
+            transform: scale(1.15);
+            box-shadow: 0 4px 12px rgba(220, 53, 69, 0.6);
         }
 
         .center-wrapper {
@@ -1113,10 +1131,8 @@
             const elaboradoPor = txtElaborado.value.trim();
             
             if (elaboradoPor === "") {
-                // Mostrar modal de confirmación
                 confirmAuthorModal.style.display = 'flex';
             } else {
-                // Si hay autor, guardar directamente
                 guardarPDFEnPC();
             }
         }
@@ -1129,11 +1145,9 @@
 
         btnFillAuthor.addEventListener('click', function() {
             confirmAuthorModal.style.display = 'none';
-            // Iluminar el campo de autor
             authorContainer.classList.add('highlight');
             txtElaborado.focus();
             
-            // Quitar el highlight cuando el usuario empiece a escribir
             const removeHighlight = function() {
                 authorContainer.classList.remove('highlight');
                 txtElaborado.removeEventListener('input', removeHighlight);
@@ -1142,7 +1156,6 @@
             txtElaborado.addEventListener('input', removeHighlight);
             txtElaborado.addEventListener('focus', removeHighlight);
             
-            // Scroll hasta el campo de autor si está minimizado
             if (isToolbarMinimized) {
                 isToolbarMinimized = false;
                 mainToolbar.classList.remove('minimized');
@@ -1341,6 +1354,14 @@
                             viewport: viewport,
                             textDivs: []
                         });
+                        
+                        // Asegurar que los spans del textLayer sean seleccionables
+                        const spans = textLayer.querySelectorAll('span');
+                        spans.forEach(span => {
+                            span.style.userSelect = 'text';
+                            span.style.webkitUserSelect = 'text';
+                            span.style.cursor = 'text';
+                        });
                     });
                     restaurarAnotaciones(num);
                     pageRendering = false;
@@ -1536,8 +1557,7 @@
                 const dia = String(ahora.getDate()).padStart(2, '0');
                 const fechaFormateada = `${anio}-${mes}-${dia}`;
 
-                // 0. INYECTAR EL NOMBRE Y LA FECHA EN EL RECUADRO SUPERIOR IZQUIERDO (CABECERA)
-                // CON FONDO BLANCO SUTIL INDIVIDUAL PARA CADA TEXTO
+                // 0. INYECTAR EL NOMBRE Y LA FECHA CON FONDO SUTIL
                 if (elaboradoPor !== "") {
                     const primeraPagina = paginasDelPDF[0];
                     if (primeraPagina) {
@@ -1546,7 +1566,6 @@
                         const yAutor = altoPagina - 85;
                         const yFecha = altoPagina - 105;
                         
-                        // Calcular ancho del texto del autor para el fondo
                         const anchoTextoAutor = fuenteTexto.widthOfTextAtSize(elaboradoPor, 14);
                         const anchoTextoFecha = fuenteTexto.widthOfTextAtSize(fechaFormateada, 12);
                         
@@ -1560,7 +1579,6 @@
                             opacity: 0.7,
                         });
                         
-                        // Nombre del autor (verde oscuro, tamaño 14)
                         primeraPagina.drawText(elaboradoPor, {
                             x: xAutor,             
                             y: yAutor,              
@@ -1579,7 +1597,6 @@
                             opacity: 0.7,
                         });
                         
-                        // Fecha (gris oscuro, tamaño 12)
                         primeraPagina.drawText(fechaFormateada, {
                             x: xAutor,             
                             y: yFecha,            
@@ -1590,7 +1607,7 @@
                     }
                 }
 
-                // 1. INYECTAR TACHADOS Y CORRECCIONES CON FONDO BLANCO SEMITRANSPARENTE
+                // 1. INYECTAR TACHADOS Y CORRECCIONES CON FONDO BLANCO Y TEXTO CENTRADO
                 for (const numPagina in annotationsData) {
                     const indiceReal = parseInt(numPagina) - 1;
                     const paginaAEditar = paginasDelPDF[indiceReal];
@@ -1600,43 +1617,54 @@
                         const xReal = marca.x / scale;
                         const anchoReal = marca.width / scale;
                         const alturaReal = marca.height / scale;
-                        const yWebCentro = (marca.y + (marca.height / 2)) / scale;
-                        const yReal = alturaRealDeLaPagina - yWebCentro;
-
-                        // Dibujar línea de tachado
+                        const yRealTop = alturaRealDeLaPagina - (marca.y / scale);
+                        const yRealCentro = yRealTop - (alturaReal / 2);
+                        
+                        // Tamaño de fuente proporcional a la altura del texto
+                        const fontSize = Math.max(7, Math.min(alturaReal * 0.7, 11));
+                        const textWidth = fuenteTexto.widthOfTextAtSize(marca.newText, fontSize);
+                        
+                        const paddingX = 4;
+                        const paddingY = 2;
+                        
+                        // Dibujar línea de tachado centrada
                         paginaAEditar.drawLine({
-                            start: { x: xReal, y: yReal },
-                            end: { x: xReal + anchoReal, y: yReal },
+                            start: { x: xReal - 2, y: yRealCentro },
+                            end: { x: xReal + anchoReal + 2, y: yRealCentro },
                             thickness: 1.5,
                             color: rgb(1, 0, 0),
                         });
 
-                        const textWidth = fuenteTexto.widthOfTextAtSize(marca.newText, 9);
-                        const paddingX = 5;
-                        const paddingY = 4;
+                        // Dibujar fondo blanco semitransparente que cubre exactamente el área
+                        const fondoWidth = Math.max(textWidth + paddingX * 2, anchoReal + paddingX * 2);
+                        const fondoHeight = alturaReal + paddingY * 2;
                         
-                        // Dibujar fondo blanco semitransparente
                         paginaAEditar.drawRectangle({
                             x: xReal - paddingX,
-                            y: yReal - alturaReal/2 - paddingY,
-                            width: Math.max(textWidth + paddingX * 2, anchoReal + paddingX * 2),
-                            height: alturaReal + paddingY * 2,
+                            y: yRealTop - alturaReal - paddingY,
+                            width: fondoWidth,
+                            height: fondoHeight,
                             color: rgb(1, 1, 1),
-                            opacity: 0.9,
+                            opacity: 0.92,
+                            borderWidth: 0.5,
+                            borderColor: marca.type === 'delete' ? rgb(0.9, 0.7, 0.7) : rgb(0.7, 0.9, 0.7),
                         });
 
+                        // Posicionar el texto centrado verticalmente en el área original
+                        const textY = yRealCentro + (fontSize * 0.35);
+                        
                         if (marca.type === 'delete') {
                             paginaAEditar.drawText(marca.newText, {
                                 x: xReal,
-                                y: yReal + 5,
-                                size: 9,
-                                color: rgb(0.8, 0, 0),
+                                y: textY,
+                                size: fontSize,
+                                color: rgb(0.8, 0.2, 0.2),
                             });
                         } else {
                             paginaAEditar.drawText(marca.newText, {
                                 x: xReal,
-                                y: yReal + 5,
-                                size: 9,
+                                y: textY,
+                                size: fontSize,
                                 color: rgb(0, 0.5, 0),
                             });
                         }
@@ -1733,7 +1761,6 @@
                 link.download = "BORRADOR " + nombreArchivoOriginal;
                 link.click();
 
-                // Mostrar notificación de éxito
                 const notification = document.createElement('div');
                 notification.style.cssText = `
                     position: fixed;
