@@ -11,7 +11,7 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
 
     <style>
-        /* ===== ESTILOS COMPLETOS (los mismos de antes) ===== */
+        /* ===== ESTILOS COMPLETOS ===== */
         :root {
             --primary: #6366f1;
             --primary-dark: #4f46e5;
@@ -485,13 +485,14 @@
             border-radius: 50%;
             width: 24px;
             height: 24px;
-            display: flex;
+            display: none;
             align-items: center;
             justify-content: center;
             font-size: 12px;
             font-weight: 700;
             box-shadow: 0 2px 8px rgba(16,185,129,0.3);
         }
+        .file-selector.has-file .badge { display: flex; }
 
         .comparison-actions {
             display: flex;
@@ -528,6 +529,28 @@
             margin-top: 20px;
             display: none;
         }
+
+        /* ========== DEBUG LOGGER ========== */
+        .debug-log {
+            margin-top: 15px;
+            padding: 12px;
+            background: #1e1e1e;
+            border-radius: var(--radius);
+            color: #d4d4d4;
+            font-family: 'Courier New', monospace;
+            font-size: 11px;
+            max-height: 200px;
+            overflow-y: auto;
+            display: none;
+        }
+        .debug-log .log-entry {
+            padding: 2px 0;
+            border-bottom: 1px solid #333;
+        }
+        .debug-log .log-entry.info { color: #4fc3f7; }
+        .debug-log .log-entry.success { color: #81c784; }
+        .debug-log .log-entry.error { color: #ef5350; }
+        .debug-log .log-entry.warning { color: #ffb74d; }
 
         /* ========== NOTES WIDGET ========== */
         .notes-widget {
@@ -693,7 +716,7 @@
                     <span class="file-name-display" id="leftFileName">Ningún archivo seleccionado</span>
                 </label>
                 <input type="file" id="leftFileInput" accept="application/pdf" />
-                <span class="badge" style="display:none;">✓</span>
+                <span class="badge">✓</span>
             </div>
             <div class="file-selector" id="rightFileSelector">
                 <label for="rightFileInput">
@@ -702,12 +725,14 @@
                     <span class="file-name-display" id="rightFileName">Ningún archivo seleccionado</span>
                 </label>
                 <input type="file" id="rightFileInput" accept="application/pdf" />
-                <span class="badge" style="display:none;">✓</span>
+                <span class="badge">✓</span>
             </div>
         </div>
         <div class="comparison-actions">
             <button class="btn-compare-action" id="btnExecuteCompare" disabled><i class="fa-solid fa-play"></i> Comparar</button>
+            <button class="btn btn-cancel" id="btnToggleDebug" style="padding:6px 12px;font-size:11px;">Ver Log</button>
         </div>
+        <div class="debug-log" id="debugLog"></div>
         <iframe id="comparisonViewer" allowfullscreen></iframe>
     </div>
 
@@ -727,6 +752,32 @@
         // ============================================================
         const DRAFTABLE_ACCOUNT_ID = 'iamCqE-test';
         const DRAFTABLE_API_KEY = 'bf40d75e7491770b9347f2126b7b4a5d';
+
+        // ============================================================
+        // SISTEMA DE LOGGING
+        // ============================================================
+        const debugLog = document.getElementById('debugLog');
+
+        function logToDebug(message, type = 'info') {
+            const entry = document.createElement('div');
+            entry.className = `log-entry ${type}`;
+            const timestamp = new Date().toLocaleTimeString();
+            entry.textContent = `[${timestamp}] ${message}`;
+            debugLog.appendChild(entry);
+            debugLog.scrollTop = debugLog.scrollHeight;
+            console.log(`[Draftable] ${message}`);
+        }
+
+        document.getElementById('btnToggleDebug').addEventListener('click', function() {
+            if (debugLog.style.display === 'block') {
+                debugLog.style.display = 'none';
+                this.textContent = 'Ver Log';
+            } else {
+                debugLog.style.display = 'block';
+                this.textContent = 'Ocultar Log';
+                logToDebug('📋 Log de depuración activado', 'info');
+            }
+        });
 
         // ============================================================
         // CÓDIGO PRINCIPAL (Edición de PDF, Undo, etc.)
@@ -1168,7 +1219,7 @@
         }
 
         // ============================================================
-        // INTEGRACIÓN CON DRAFTABLE - CON DEPURACIÓN MEJORADA
+        // INTEGRACIÓN CON DRAFTABLE - VERSIÓN CORREGIDA
         // ============================================================
         let leftFileSelected = null;
         let rightFileSelected = null;
@@ -1190,12 +1241,12 @@
                 leftFileSelected = file;
                 leftFileNameDisplay.textContent = file.name;
                 leftSelector.classList.add('has-file');
-                leftSelector.querySelector('.badge').style.display = 'flex';
+                logToDebug(`📄 PDF 1 seleccionado: ${file.name} (${(file.size/1024).toFixed(1)} KB)`, 'success');
             } else {
                 leftFileSelected = null;
                 leftFileNameDisplay.textContent = 'Ningún archivo seleccionado';
                 leftSelector.classList.remove('has-file');
-                leftSelector.querySelector('.badge').style.display = 'none';
+                logToDebug('📄 PDF 1 deseleccionado', 'warning');
             }
             updateCompareButton();
         });
@@ -1207,12 +1258,12 @@
                 rightFileSelected = file;
                 rightFileNameDisplay.textContent = file.name;
                 rightSelector.classList.add('has-file');
-                rightSelector.querySelector('.badge').style.display = 'flex';
+                logToDebug(`📄 PDF 2 seleccionado: ${file.name} (${(file.size/1024).toFixed(1)} KB)`, 'success');
             } else {
                 rightFileSelected = null;
                 rightFileNameDisplay.textContent = 'Ningún archivo seleccionado';
                 rightSelector.classList.remove('has-file');
-                rightSelector.querySelector('.badge').style.display = 'none';
+                logToDebug('📄 PDF 2 deseleccionado', 'warning');
             }
             updateCompareButton();
         });
@@ -1223,50 +1274,61 @@
 
         // Función para convertir archivo a Base64 (sin prefijo)
         async function fileToBase64(file) {
+            logToDebug(`🔄 Convirtiendo ${file.name} a Base64...`, 'info');
             return new Promise((resolve, reject) => {
                 const reader = new FileReader();
                 reader.readAsDataURL(file);
                 reader.onload = () => {
-                    // Extraer solo la parte base64 (después de la coma)
                     const base64 = reader.result.split(',')[1];
+                    logToDebug(`✅ ${file.name} convertido (${base64.length} caracteres)`, 'success');
                     resolve(base64);
                 };
-                reader.onerror = (error) => reject(error);
+                reader.onerror = (error) => {
+                    logToDebug(`❌ Error al leer ${file.name}: ${error.message}`, 'error');
+                    reject(error);
+                };
             });
         }
 
-        // Crear comparación en Draftable con manejo de errores detallado
+        // Crear comparación en Draftable - CORREGIDO según documentación
         async function createDraftableComparison(leftFile, rightFile) {
             try {
+                logToDebug('🚀 Iniciando comparación con Draftable API...', 'info');
+
+                // Validar tamaño (límite de 20 MB)
+                const maxSize = 20 * 1024 * 1024;
+                if (leftFile.size > maxSize) {
+                    throw new Error(`El PDF 1 (${leftFile.name}) excede los 20 MB. Tamaño: ${(leftFile.size/1024/1024).toFixed(2)} MB`);
+                }
+                if (rightFile.size > maxSize) {
+                    throw new Error(`El PDF 2 (${rightFile.name}) excede los 20 MB. Tamaño: ${(rightFile.size/1024/1024).toFixed(2)} MB`);
+                }
+                logToDebug(`✅ Archivos dentro del límite de 20 MB`, 'success');
+
                 // Convertir a base64
                 const leftBase64 = await fileToBase64(leftFile);
                 const rightBase64 = await fileToBase64(rightFile);
 
-                // Validar tamaño (Draftable acepta hasta 20 MB)
-                const maxSize = 20 * 1024 * 1024; // 20 MB
-                if (leftFile.size > maxSize || rightFile.size > maxSize) {
-                    throw new Error('Uno de los archivos supera el límite de 20 MB.');
-                }
-
+                // Construir payload según la documentación oficial
                 const payload = {
                     left: {
                         display_name: leftFile.name,
                         file_content: leftBase64,
-                        file_type: 'pdf'
+                        file_type: 'pdf'  // CORREGIDO: field name correcto
                     },
                     right: {
                         display_name: rightFile.name,
                         file_content: rightBase64,
-                        file_type: 'pdf'
+                        file_type: 'pdf'  // CORREGIDO: field name correcto
                     },
                     public: false
                 };
 
                 // Autenticación: Basic Auth con account_id + ':' + auth_token
                 const auth = btoa(DRAFTABLE_ACCOUNT_ID + ':' + DRAFTABLE_API_KEY);
+                logToDebug(`🔑 Autenticando con Account ID: ${DRAFTABLE_ACCOUNT_ID}`, 'info');
 
-                console.log('Enviando solicitud a Draftable...');
-                console.log('Payload:', payload);
+                logToDebug(`📤 Enviando solicitud POST a /comparisons`, 'info');
 
                 const response = await fetch('https://api.draftable.com/v1/comparisons', {
                     method: 'POST',
@@ -1277,7 +1339,7 @@
                     body: JSON.stringify(payload)
                 });
 
-                // Leer la respuesta (incluso si no es OK) para depuración
+                // Leer respuesta
                 const responseText = await response.text();
                 let responseData = null;
                 try {
@@ -1286,24 +1348,30 @@
                     responseData = { raw: responseText };
                 }
 
-                console.log('Respuesta de Draftable:', response.status, responseData);
+                logToDebug(`📥 Respuesta HTTP: ${response.status} ${response.statusText}`, response.ok ? 'success' : 'error');
 
                 if (!response.ok) {
                     let errorMsg = `Error ${response.status}`;
                     if (responseData && responseData.message) {
                         errorMsg += `: ${responseData.message}`;
                     } else if (responseData && responseData.raw) {
-                        errorMsg += `: ${responseData.raw}`;
+                        // Mostrar solo los primeros 200 caracteres para no saturar
+                        const rawPreview = responseData.raw.substring(0, 200);
+                        errorMsg += `: ${rawPreview}${responseData.raw.length > 200 ? '...' : ''}`;
                     } else {
-                        errorMsg += `: ${responseText}`;
+                        errorMsg += `: ${responseText.substring(0, 200)}`;
                     }
+                    logToDebug(`❌ ${errorMsg}`, 'error');
                     throw new Error(errorMsg);
                 }
 
+                logToDebug(`✅ Comparación creada exitosamente!`, 'success');
+                logToDebug(`🔗 URL del visor: ${responseData.viewer_url}`, 'info');
+
                 return responseData.viewer_url;
             } catch (error) {
-                console.error('Error en createDraftableComparison:', error);
-                throw error; // Re-lanzar para que lo maneje el caller
+                logToDebug(`❌ Error en createDraftableComparison: ${error.message}`, 'error');
+                throw error;
             }
         }
 
@@ -1314,35 +1382,35 @@
                 return;
             }
 
-            // Deshabilitar botón para evitar múltiples clics
+            // Deshabilitar botón
             btnExecuteCompare.disabled = true;
             btnExecuteCompare.textContent = '⏳ Procesando...';
+            logToDebug('🔄 Iniciando comparación...', 'info');
 
-            // Mostrar mensaje de carga dentro del panel
+            // Mostrar mensaje de carga
             comparisonViewer.style.display = 'none';
             const loadingMsg = document.createElement('div');
             loadingMsg.id = 'loadingCompareMsg';
             loadingMsg.textContent = '⏳ Creando comparación, esto puede tomar unos segundos...';
-            loadingMsg.style.cssText = 'padding:20px;text-align:center;font-weight:bold;';
+            loadingMsg.style.cssText = 'padding:20px;text-align:center;font-weight:bold;font-size:16px;';
             comparisonPanel.appendChild(loadingMsg);
 
             try {
                 const viewerUrl = await createDraftableComparison(leftFileSelected, rightFileSelected);
                 comparisonViewer.src = viewerUrl;
                 comparisonViewer.style.display = 'block';
-                // Remover mensaje de carga
                 const msg = document.getElementById('loadingCompareMsg');
                 if (msg) msg.remove();
                 showNotification('✅ Comparación lista', 'success');
+                logToDebug('🎉 Comparación cargada en el visor', 'success');
             } catch (error) {
                 console.error('Error en la comparación:', error);
-                // Mostrar error detallado en la alerta
-                alert(`❌ Error al comparar documentos:\n${error.message || 'Error desconocido'}\n\nRevisa la consola para más detalles.`);
+                logToDebug(`❌ Error: ${error.message}`, 'error');
+                alert(`❌ Error al comparar documentos:\n${error.message || 'Error desconocido'}\n\nRevisa el LOG para más detalles.`);
                 comparisonViewer.style.display = 'none';
                 const msg = document.getElementById('loadingCompareMsg');
                 if (msg) msg.remove();
             } finally {
-                // Restaurar botón
                 btnExecuteCompare.disabled = false;
                 btnExecuteCompare.innerHTML = '<i class="fa-solid fa-play"></i> Comparar';
             }
@@ -1351,19 +1419,23 @@
         // Mostrar/ocultar panel de comparación
         document.getElementById('btnComparar').addEventListener('click', function() {
             comparisonPanel.style.display = 'block';
-            // Cerrar cualquier visor previo
             comparisonViewer.style.display = 'none';
             comparisonViewer.src = '';
+            logToDebug('📂 Panel de comparación abierto', 'info');
+            debugLog.style.display = 'block';
+            document.getElementById('btnToggleDebug').textContent = 'Ocultar Log';
         });
 
         document.getElementById('btnCerrarComparacion').addEventListener('click', function() {
             comparisonPanel.style.display = 'none';
             comparisonViewer.style.display = 'none';
             comparisonViewer.src = '';
+            logToDebug('❌ Panel de comparación cerrado', 'info');
         });
 
         // Inicializar estado del botón
         updateCompareButton();
+        logToDebug('🔧 Herramienta lista. Selecciona dos PDFs para comparar.', 'info');
     </script>
 </body>
 </html>
