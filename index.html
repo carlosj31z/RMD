@@ -722,7 +722,23 @@
             const range = selection.getRangeAt(0);
             const rect = range.getBoundingClientRect();
             const viewerRect = annotationsLayer.getBoundingClientRect();
-            const x = rect.left - viewerRect.left, y = rect.top - viewerRect.top, width = rect.width, height = rect.height;
+            
+            // Obtener coordenadas relativas al visor
+            let x = rect.left - viewerRect.left;
+            let y = rect.top - viewerRect.top;
+            let width = rect.width;
+            let height = rect.height;
+            
+            // Limitar dimensiones para evitar problemas con textos multilínea
+            width = Math.min(width, viewerRect.width * 0.8);
+            height = Math.min(height, viewerRect.height * 0.3);
+            
+            // Asegurar que las coordenadas sean válidas
+            x = Math.max(0, x);
+            y = Math.max(0, y);
+            width = Math.max(1, width);
+            height = Math.max(1, height);
+            
             selection.removeAllRanges();
             showReplacementModal(textoSeleccionado, { x, y, width, height, textoSeleccionado }, 'replace');
         }
@@ -734,7 +750,21 @@
             const range = selection.getRangeAt(0);
             const rect = range.getBoundingClientRect();
             const viewerRect = annotationsLayer.getBoundingClientRect();
-            const x = rect.left - viewerRect.left, y = rect.top - viewerRect.top, width = rect.width, height = rect.height;
+            
+            let x = rect.left - viewerRect.left;
+            let y = rect.top - viewerRect.top;
+            let width = rect.width;
+            let height = rect.height;
+            
+            // Limitar dimensiones para evitar problemas con textos multilínea
+            width = Math.min(width, viewerRect.width * 0.8);
+            height = Math.min(height, viewerRect.height * 0.3);
+            
+            x = Math.max(0, x);
+            y = Math.max(0, y);
+            width = Math.max(1, width);
+            height = Math.max(1, height);
+            
             selection.removeAllRanges();
             showReplacementModal(textoSeleccionado, { x, y, width, height, textoSeleccionado }, 'delete');
         }
@@ -951,7 +981,6 @@
                     const h = p.getHeight();
                     const xA = 45, yA = h - 85, yF = h - 105;
                     
-                    // Fondo sutil para el autor
                     p.drawRectangle({ 
                         x: xA-4, 
                         y: yA-4, 
@@ -996,12 +1025,13 @@
                     const pageH = page.getHeight();
                     
                     marcas.forEach(m => {
-                        const xR = m.x / scale;
-                        const wR = m.width / scale;
-                        const hR = m.height / scale;
-                        const yTop = pageH - (m.y / scale);
-                        const yCenter = yTop - (hR / 2);
-                        const fs = Math.max(hR * 0.75, 6);
+                        // Limitar valores para evitar errores
+                        const xR = Math.max(0, m.x / scale);
+                        const wR = Math.max(1, Math.min(m.width / scale, page.getWidth() * 0.8));
+                        const hR = Math.max(1, Math.min(m.height / scale, page.getHeight() * 0.3));
+                        const yTop = Math.max(0, pageH - (m.y / scale));
+                        const yCenter = Math.max(0, yTop - (hR / 2));
+                        const fs = Math.max(6, Math.min(hR * 0.75, 24));
                         const tw = font.widthOfTextAtSize(m.newText, fs);
                         
                         // Línea tachada en ROJO
@@ -1017,7 +1047,7 @@
                             page.drawRectangle({ 
                                 x: xR - 1, 
                                 y: yTop - hR, 
-                                width: tw + 4, 
+                                width: Math.min(tw + 4, page.getWidth() * 0.8), 
                                 height: hR, 
                                 color: rgb(1, 1, 1), 
                                 opacity: 0.65 
@@ -1096,7 +1126,6 @@
                         } else if (uploadedImageType === 'image/jpeg' || uploadedImageType === 'image/jpg') {
                             image = await doc.embedJpg(uploadedImageBytes);
                         } else {
-                            // Intentar como PNG por defecto
                             try {
                                 image = await doc.embedPng(uploadedImageBytes);
                             } catch {
@@ -1113,7 +1142,6 @@
                         });
                     } catch (imgError) {
                         console.warn("Error al incrustar imagen:", imgError);
-                        // Continuar sin la imagen
                     }
                 }
 
