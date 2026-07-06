@@ -479,7 +479,7 @@
             user-select: none;
             font-family: 'Inter', sans-serif;
             font-weight: 600;
-            color: #10b981; /* VERDE */
+            color: #10b981;
             text-align: center;
             line-height: 1.4;
             transition: box-shadow 0.15s;
@@ -516,7 +516,7 @@
             align-items: center;
             justify-content: center;
             word-break: break-word;
-            color: #10b981; /* VERDE */
+            color: #10b981;
             font-weight: 600;
             line-height: 1.4;
         }
@@ -579,7 +579,7 @@
                     <input type="file" id="imageUpload" accept="image/*" style="display:none" onchange="handleImageUpload(event)">
                     <button class="btn btn-save" id="btnGuardar" onclick="verificarAutorYGuardar()" style="display:none;"><i class="fa-solid fa-floppy-disk"></i> Guardar</button>
                 </div>
-                <div class="toolbar-tip"><i class="fa-solid fa-lightbulb"></i><span><strong>Tip:</strong> Selecciona texto y presiona <strong>Supr</strong> para reemplazar. <strong>Ctrl+Z</strong> deshacer. Las notas VB se mueven y redimensionan arrastrando; la fuente se ajusta automáticamente.</span></div>
+                <div class="toolbar-tip"><i class="fa-solid fa-lightbulb"></i><span><strong>Tip:</strong> Selecciona texto y presiona <strong>Supr</strong> para reemplazar. <strong>Ctrl+Z</strong> deshacer. Las notas VB se mueven y redimensionan; la fuente se ajusta automáticamente y al guardar se conserva su tamaño y posición.</span></div>
             </div>
         </div>
     </div>
@@ -920,7 +920,6 @@
             const maxHeight = container.clientHeight - 16;
             if (maxWidth <= 0 || maxHeight <= 0) return;
 
-            // Usar elemento temporal para medir
             const temp = document.createElement('div');
             temp.style.position = 'absolute';
             temp.style.visibility = 'hidden';
@@ -937,10 +936,8 @@
             let step = 1;
             let found = false;
 
-            // Buscar el mayor tamaño que quepa
             while (fontSize > 6) {
                 temp.style.fontSize = fontSize + 'px';
-                // Usamos scrollHeight para medir el alto total, y scrollWidth para el ancho
                 if (temp.scrollHeight <= maxHeight && temp.scrollWidth <= maxWidth) {
                     found = true;
                     break;
@@ -948,12 +945,10 @@
                 fontSize -= step;
             }
 
-            // Si no se encontró, usar el mínimo
             if (!found) fontSize = 6;
 
             document.body.removeChild(temp);
 
-            // Aplicar el tamaño al texto
             const textDiv = container.querySelector('.nota-text');
             if (textDiv) {
                 textDiv.style.fontSize = fontSize + 'px';
@@ -967,7 +962,6 @@
 
             annotationsData[num].forEach(marca => {
                 if (marca.type === 'nota-vb') {
-                    // Crear contenedor de la nota
                     const container = document.createElement('div');
                     container.className = 'nota-vb-container';
                     container.style.left = marca.x + 'px';
@@ -977,13 +971,11 @@
                     container.dataset.id = marca.id;
                     container.dataset.num = num;
 
-                    // Texto
                     const textDiv = document.createElement('div');
                     textDiv.className = 'nota-text';
                     textDiv.textContent = marca.newText;
                     container.appendChild(textDiv);
 
-                    // Botón eliminar
                     const deleteBtn = document.createElement('button');
                     deleteBtn.className = 'delete-btn-nota';
                     deleteBtn.innerHTML = '<i class="fa-solid fa-xmark"></i>';
@@ -994,20 +986,17 @@
                     };
                     container.appendChild(deleteBtn);
 
-                    // Mango de redimensionamiento
                     const resizeHandle = document.createElement('div');
                     resizeHandle.className = 'resize-handle';
                     resizeHandle.textContent = '◢';
                     container.appendChild(resizeHandle);
 
-                    // Eventos de arrastre (sobre el contenedor)
                     container.addEventListener('mousedown', function(e) {
                         if (e.target.closest('.delete-btn-nota') || e.target.closest('.resize-handle')) return;
                         e.preventDefault();
                         iniciarArrastre(e, marca.id, num);
                     });
 
-                    // Evento de redimensionamiento (sobre el mango)
                     resizeHandle.addEventListener('mousedown', function(e) {
                         e.preventDefault();
                         e.stopPropagation();
@@ -1016,12 +1005,10 @@
 
                     annotationsLayer.appendChild(container);
 
-                    // Ajustar fuente inicialmente
                     requestAnimationFrame(() => {
                         ajustarFuenteNota(container, marca.newText);
                     });
                 } else {
-                    // Reemplazo normal
                     const div = document.createElement('div');
                     div.className = 'correction-mark';
                     div.style.cssText = `left:${marca.x}px;top:${marca.y}px;width:${marca.width}px;height:${marca.height}px;`;
@@ -1117,7 +1104,6 @@
                 if (container) {
                     container.style.width = newW + 'px';
                     container.style.height = newH + 'px';
-                    // Ajustar fuente con RAF
                     if (resizeRAF) cancelAnimationFrame(resizeRAF);
                     resizeRAF = requestAnimationFrame(() => {
                         ajustarFuenteNota(container, marca.newText);
@@ -1180,7 +1166,7 @@
             reader.readAsArrayBuffer(file);
         }
 
-        // ========== SAVE ==========
+        // ========== SAVE (CORREGIDO PARA NOTA VB) ==========
         function verificarAutorYGuardar() {
             if (txtElaborado.value.trim() === "") { confirmAuthorModal.style.display = 'flex'; }
             else { guardarPDFEnPC(); }
@@ -1200,6 +1186,40 @@
             authorContainer.scrollIntoView({ behavior: 'smooth', block: 'center' });
         });
         confirmAuthorModal.addEventListener('click', (e) => { if (e.target === confirmAuthorModal) confirmAuthorModal.style.display = 'none'; });
+
+        // Función auxiliar para calcular el tamaño de fuente óptimo en el PDF
+        function calcularTamanoFuentePDF(font, texto, anchoMax, altoMax) {
+            const lineHeight = 1.4;
+            let fontSize = 20;
+            let step = 1;
+            let found = false;
+
+            while (fontSize > 6) {
+                // Dividir en líneas según el ancho
+                const lines = [];
+                let currentLine = '';
+                const words = texto.split(' ');
+                for (const word of words) {
+                    const testLine = currentLine + (currentLine ? ' ' : '') + word;
+                    if (font.widthOfTextAtSize(testLine, fontSize) <= anchoMax) {
+                        currentLine = testLine;
+                    } else {
+                        if (currentLine) lines.push(currentLine);
+                        currentLine = word;
+                    }
+                }
+                if (currentLine) lines.push(currentLine);
+
+                const totalHeight = lines.length * fontSize * lineHeight;
+                if (totalHeight <= altoMax && lines.every(line => font.widthOfTextAtSize(line, fontSize) <= anchoMax)) {
+                    found = true;
+                    break;
+                }
+                fontSize -= step;
+            }
+            if (!found) fontSize = 6;
+            return fontSize;
+        }
 
         async function guardarPDFEnPC() {
             if (!pdfBytesOriginal) {
@@ -1252,11 +1272,9 @@
                         const hR = m.height / scale;
                         const yTop = pageH - (m.y / scale);
                         const yCenter = yTop - (hR / 2);
-                        const fs = Math.max(hR * 0.75, 6);
-                        const tw = font.widthOfTextAtSize(m.newText, fs);
 
                         if (m.type === 'nota-vb') {
-                            // Dibujar nota VB con borde y fondo
+                            // Dibujar fondo y borde igual que en la vista
                             page.drawRectangle({
                                 x: xR,
                                 y: yTop - hR,
@@ -1275,38 +1293,46 @@
                                 color: rgb(1, 1, 1),
                                 opacity: 0.9
                             });
-                            // Texto en verde
+
+                            // Calcular el tamaño de fuente óptimo para que quepa en el rectángulo
+                            const fontSize = calcularTamanoFuentePDF(fontBold, m.newText, wR - 20, hR - 16);
+                            const lineHeight = 1.4;
+
+                            // Dividir en líneas según el ancho
                             const lines = [];
+                            let currentLine = '';
                             const words = m.newText.split(' ');
-                            let line = '';
                             for (const word of words) {
-                                const testLine = line + ' ' + word;
-                                // Usamos la fuente bold para medir
-                                if (fontBold.widthOfTextAtSize(testLine.trim(), 11) < wR - 20) {
-                                    line = testLine;
+                                const testLine = currentLine + (currentLine ? ' ' : '') + word;
+                                if (fontBold.widthOfTextAtSize(testLine, fontSize) <= wR - 20) {
+                                    currentLine = testLine;
                                 } else {
-                                    lines.push(line.trim());
-                                    line = word;
+                                    if (currentLine) lines.push(currentLine);
+                                    currentLine = word;
                                 }
                             }
-                            if (line) lines.push(line.trim());
+                            if (currentLine) lines.push(currentLine);
 
-                            const totalHeight = lines.length * 18;
-                            const startY = yTop - hR + (hR - totalHeight) / 2 + 14;
+                            const totalHeight = lines.length * fontSize * lineHeight;
+                            const startY = yTop - hR + (hR - totalHeight) / 2 + (fontSize * lineHeight * 0.8);
 
+                            // Dibujar cada línea centrada horizontalmente
                             lines.forEach((line, idx) => {
-                                const lineWidth = fontBold.widthOfTextAtSize(line, 11);
+                                const lineWidth = fontBold.widthOfTextAtSize(line, fontSize);
                                 const xPos = xR + (wR - lineWidth) / 2;
                                 page.drawText(line, {
                                     x: xPos,
-                                    y: startY + idx * 18,
-                                    size: 11,
+                                    y: startY + idx * fontSize * lineHeight,
+                                    size: fontSize,
                                     font: fontBold,
                                     color: rgb(0.06, 0.6, 0.06) // verde
                                 });
                             });
+
                         } else {
                             // Reemplazo normal
+                            const fs = Math.max(hR * 0.75, 6);
+                            const tw = font.widthOfTextAtSize(m.newText, fs);
                             page.drawLine({ start: {x: xR, y: yCenter}, end: {x: xR + wR, y: yCenter}, thickness: 1.5, color: rgb(1, 0, 0) });
                             page.drawRectangle({ x: xR - 1, y: yTop - hR, width: tw + 4, height: hR, color: rgb(1, 1, 1), opacity: 0.65 });
                             page.drawText(m.newText, { x: xR, y: yCenter - (fs * 0.25), size: fs, font: font, color: rgb(0, 0.45, 0) });
