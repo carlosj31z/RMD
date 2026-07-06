@@ -11,7 +11,7 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
 
     <style>
-        /* ===== ESTILOS COMPLETOS (igual que antes) ===== */
+        /* ===== ESTILOS COMPLETOS (los mismos de antes) ===== */
         :root {
             --primary: #6366f1;
             --primary-dark: #4f46e5;
@@ -579,7 +579,7 @@
                     <input type="file" id="imageUpload" accept="image/*" style="display:none" onchange="handleImageUpload(event)">
                     <button class="btn btn-save" id="btnGuardar" onclick="verificarAutorYGuardar()" style="display:none;"><i class="fa-solid fa-floppy-disk"></i> Guardar</button>
                 </div>
-                <div class="toolbar-tip"><i class="fa-solid fa-lightbulb"></i><span><strong>Tip:</strong> Selecciona texto y presiona <strong>Supr</strong> para reemplazar. <strong>Ctrl+Z</strong> deshacer. Las notas VB se ajustan perfectamente al recuadro al exportar.</span></div>
+                <div class="toolbar-tip"><i class="fa-solid fa-lightbulb"></i><span><strong>Tip:</strong> Selecciona texto y presiona <strong>Supr</strong> para reemplazar. <strong>Ctrl+Z</strong> deshacer. Nota VB alineada a la derecha y arriba al exportar.</span></div>
             </div>
         </div>
     </div>
@@ -1166,7 +1166,7 @@
             reader.readAsArrayBuffer(file);
         }
 
-        // ========== SAVE CON AJUSTE PERFECTO PARA NOTA VB ==========
+        // ========== SAVE CON NOTA VB ALINEADA A LA DERECHA Y ARRIBA ==========
         function verificarAutorYGuardar() {
             if (txtElaborado.value.trim() === "") { confirmAuthorModal.style.display = 'flex'; }
             else { guardarPDFEnPC(); }
@@ -1187,7 +1187,7 @@
         });
         confirmAuthorModal.addEventListener('click', (e) => { if (e.target === confirmAuthorModal) confirmAuthorModal.style.display = 'none'; });
 
-        // ========== FUNCIÓN MEJORADA PARA CÁLCULO DE LÍNEAS Y TAMAÑO ==========
+        // Función para calcular líneas y tamaño de fuente, manteniendo el texto dentro del recuadro
         function calcularTamanoFuenteYLineas(font, texto, anchoMax, altoMax) {
             // Probar tamaños de fuente de mayor a menor
             for (let fontSize = 24; fontSize >= 6; fontSize -= 0.5) {
@@ -1220,13 +1220,11 @@
                     const availableGap = altoMax - totalHeightLines;
                     const gap = Math.max(0, availableGap / (lines.length - 1));
                     lineHeight = fontSize + Math.max(gap, fontSize * 0.1);
-                    // Limitar interlineado máximo para no separar demasiado
                     lineHeight = Math.min(lineHeight, fontSize * 2.5);
                 }
 
                 const totalHeight = lines.length * fontSize + (lines.length - 1) * (lineHeight - fontSize);
                 if (totalHeight <= altoMax) {
-                    // Encontramos el mayor fontSize que cabe con este interlineado
                     return { fontSize: fontSize, lines: lines, lineHeight: lineHeight };
                 }
             }
@@ -1300,7 +1298,6 @@
                         const hR = m.height / scale;
                         const yTop = pageH - (m.y / scale);
                         const yBottom = yTop - hR;
-                        const yCenter = yTop - (hR / 2);
 
                         if (m.type === 'nota-vb') {
                             // Dibujar fondo y borde
@@ -1324,21 +1321,22 @@
                             });
 
                             // Calcular tamaño de fuente y líneas óptimas
-                            const anchoUtil = wR - 10;
-                            const altoUtil = hR - 8;
+                            const anchoUtil = wR - 6;   // padding horizontal mínimo
+                            const altoUtil = hR - 4;    // padding vertical mínimo
                             const { fontSize, lines, lineHeight } = calcularTamanoFuenteYLineas(fontBold, m.newText, anchoUtil, altoUtil);
 
-                            // Calcular posición Y inicial para centrar verticalmente
-                            const totalHeight = lines.length * lineHeight;
-                            const startY = yBottom + (hR - totalHeight) / 2 + fontSize * 0.85;
+                            // Posición inicial: esquina superior derecha del rectángulo (con padding mínimo)
+                            const startX = xR + wR - 4; // borde derecho menos padding
+                            const startY = yTop - 4;    // borde superior menos padding
 
-                            // Dibujar cada línea centrada horizontalmente
+                            // Dibujar cada línea alineada a la derecha
                             lines.forEach((line, idx) => {
                                 const lineWidth = fontBold.widthOfTextAtSize(line, fontSize);
-                                const xPos = xR + (wR - lineWidth) / 2;
+                                const xPos = startX - lineWidth; // pegado a la derecha
+                                const yPos = startY - idx * lineHeight;
                                 page.drawText(line, {
                                     x: xPos,
-                                    y: startY - idx * lineHeight,
+                                    y: yPos,
                                     size: fontSize,
                                     font: fontBold,
                                     color: rgb(0.06, 0.6, 0.06) // verde
@@ -1347,6 +1345,7 @@
 
                         } else {
                             // Reemplazo normal
+                            const yCenter = yTop - (hR / 2);
                             const fs = Math.max(hR * 0.75, 6);
                             const tw = font.widthOfTextAtSize(m.newText, fs);
                             page.drawLine({ start: {x: xR, y: yCenter}, end: {x: xR + wR, y: yCenter}, thickness: 1.5, color: rgb(1, 0, 0) });
@@ -1356,7 +1355,7 @@
                     });
                 }
 
-                // Notas adicionales
+                // Notas adicionales (sin cambios)
                 if (notasAdicionales) {
                     const fsN = 11, lh = 16, mg = 50, uw = 595.28 - mg * 2;
                     const lines = [];
