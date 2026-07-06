@@ -1166,7 +1166,7 @@
             reader.readAsArrayBuffer(file);
         }
 
-        // ========== SAVE (VERSIÓN MEJORADA: TEXTO PERFECTAMENTE CUADRADO) ==========
+        // ========== SAVE CON AJUSTE PERFECTO PARA NOTA VB ==========
         function verificarAutorYGuardar() {
             if (txtElaborado.value.trim() === "") { confirmAuthorModal.style.display = 'flex'; }
             else { guardarPDFEnPC(); }
@@ -1187,13 +1187,8 @@
         });
         confirmAuthorModal.addEventListener('click', (e) => { if (e.target === confirmAuthorModal) confirmAuthorModal.style.display = 'none'; });
 
-        // Función optimizada para calcular líneas y tamaño de fuente
+        // ========== FUNCIÓN MEJORADA PARA CÁLCULO DE LÍNEAS Y TAMAÑO ==========
         function calcularTamanoFuenteYLineas(font, texto, anchoMax, altoMax) {
-            const lineHeightRatio = 1.2; // interlineado más compacto
-            let mejorTamanio = 6;
-            let mejoresLineas = [];
-            let mejorInterlineado = 0;
-
             // Probar tamaños de fuente de mayor a menor
             for (let fontSize = 24; fontSize >= 6; fontSize -= 0.5) {
                 // Dividir en líneas según el ancho
@@ -1215,41 +1210,43 @@
                 const allFitWidth = lines.every(line => font.widthOfTextAtSize(line, fontSize) <= anchoMax);
                 if (!allFitWidth || lines.length === 0) continue;
 
-                // Calcular altura total con interlineado ajustado para ocupar todo el alto
-                const lineHeight = (lines.length > 1) ? (altoMax - fontSize) / (lines.length - 1) : fontSize * lineHeightRatio;
-                // Si lineHeight es menor que fontSize, limitar a fontSize * 0.8
-                const finalLineHeight = Math.max(fontSize * 0.8, Math.min(lineHeight, fontSize * 1.8));
-                const totalHeight = lines.length * fontSize + (lines.length - 1) * (finalLineHeight - fontSize);
+                // Calcular el interlineado necesario para ocupar todo el alto
+                let lineHeight;
+                if (lines.length === 1) {
+                    lineHeight = fontSize * 1.2;
+                } else {
+                    // Espacio total disponible para las líneas y los espacios entre ellas
+                    const totalHeightLines = lines.length * fontSize;
+                    const availableGap = altoMax - totalHeightLines;
+                    const gap = Math.max(0, availableGap / (lines.length - 1));
+                    lineHeight = fontSize + Math.max(gap, fontSize * 0.1);
+                    // Limitar interlineado máximo para no separar demasiado
+                    lineHeight = Math.min(lineHeight, fontSize * 2.5);
+                }
 
+                const totalHeight = lines.length * fontSize + (lines.length - 1) * (lineHeight - fontSize);
                 if (totalHeight <= altoMax) {
-                    mejorTamanio = fontSize;
-                    mejoresLineas = lines;
-                    mejorInterlineado = finalLineHeight;
-                    break;
+                    // Encontramos el mayor fontSize que cabe con este interlineado
+                    return { fontSize: fontSize, lines: lines, lineHeight: lineHeight };
                 }
             }
 
-            // Si no se encontró, usar el mínimo
-            if (mejoresLineas.length === 0) {
-                mejorTamanio = 6;
-                const lines = [];
-                let currentLine = '';
-                const words = texto.split(' ');
-                for (const word of words) {
-                    const testLine = currentLine + (currentLine ? ' ' : '') + word;
-                    if (font.widthOfTextAtSize(testLine, mejorTamanio) <= anchoMax) {
-                        currentLine = testLine;
-                    } else {
-                        if (currentLine) lines.push(currentLine);
-                        currentLine = word;
-                    }
+            // Fallback: usar tamaño mínimo
+            const fontSize = 6;
+            const lines = [];
+            let currentLine = '';
+            const words = texto.split(' ');
+            for (const word of words) {
+                const testLine = currentLine + (currentLine ? ' ' : '') + word;
+                if (font.widthOfTextAtSize(testLine, fontSize) <= anchoMax) {
+                    currentLine = testLine;
+                } else {
+                    if (currentLine) lines.push(currentLine);
+                    currentLine = word;
                 }
-                if (currentLine) lines.push(currentLine);
-                mejoresLineas = lines;
-                mejorInterlineado = mejorTamanio * 1.2;
             }
-
-            return { fontSize: mejorTamanio, lines: mejoresLineas, lineHeight: mejorInterlineado };
+            if (currentLine) lines.push(currentLine);
+            return { fontSize: fontSize, lines: lines, lineHeight: fontSize * 1.2 };
         }
 
         async function guardarPDFEnPC() {
@@ -1326,9 +1323,9 @@
                                 opacity: 0.9
                             });
 
-                            // Calcular fuente, líneas e interlineado óptimos
-                            const anchoUtil = wR - 12;
-                            const altoUtil = hR - 10;
+                            // Calcular tamaño de fuente y líneas óptimas
+                            const anchoUtil = wR - 10;
+                            const altoUtil = hR - 8;
                             const { fontSize, lines, lineHeight } = calcularTamanoFuenteYLineas(fontBold, m.newText, anchoUtil, altoUtil);
 
                             // Calcular posición Y inicial para centrar verticalmente
