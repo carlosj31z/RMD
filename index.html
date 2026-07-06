@@ -579,7 +579,7 @@
                     <input type="file" id="imageUpload" accept="image/*" style="display:none" onchange="handleImageUpload(event)">
                     <button class="btn btn-save" id="btnGuardar" onclick="verificarAutorYGuardar()" style="display:none;"><i class="fa-solid fa-floppy-disk"></i> Guardar</button>
                 </div>
-                <div class="toolbar-tip"><i class="fa-solid fa-lightbulb"></i><span><strong>Tip:</strong> Selecciona texto y presiona <strong>Supr</strong> para reemplazar. <strong>Ctrl+Z</strong> deshacer. La nota VB se exporta centrada perfectamente.</span></div>
+                <div class="toolbar-tip"><i class="fa-solid fa-lightbulb"></i><span><strong>Tip:</strong> Selecciona texto y presiona <strong>Supr</strong> para reemplazar. <strong>Ctrl+Z</strong> deshacer. La nota VB se alinea arriba y centrada.</span></div>
             </div>
         </div>
     </div>
@@ -1166,7 +1166,7 @@
             reader.readAsArrayBuffer(file);
         }
 
-        // ========== SAVE CON NOTA VB CENTRADA COMO BLOQUE ==========
+        // ========== SAVE CON NOTA VB ALINEADA ARRIBA ==========
         function verificarAutorYGuardar() {
             if (txtElaborado.value.trim() === "") { confirmAuthorModal.style.display = 'flex'; }
             else { guardarPDFEnPC(); }
@@ -1187,9 +1187,9 @@
         });
         confirmAuthorModal.addEventListener('click', (e) => { if (e.target === confirmAuthorModal) confirmAuthorModal.style.display = 'none'; });
 
-        // Función corregida para dividir el texto en líneas y calcular tamaño óptimo
+        // Función para dividir el texto en líneas y calcular tamaño óptimo
         function dividirTextoYCalcularFuente(font, texto, anchoMax, altoMax) {
-            // 1. Probar diferentes tamaños de fuente (de mayor a menor)
+            // Probar diferentes tamaños de fuente (de mayor a menor)
             for (let fontSize = 24; fontSize >= 6; fontSize -= 0.5) {
                 // Dividir en líneas según el ancho
                 const lines = [];
@@ -1319,8 +1319,8 @@
                             // Calcular altura total del bloque
                             const totalHeight = lines.length * lineHeight;
 
-                            // Posición Y de la base de la primera línea para centrar verticalmente
-                            const startY = yBottom + (hR - totalHeight) / 2 + fontSize * 0.9;
+                            // Posición Y: alineado al borde superior con pequeño padding (4px)
+                            const startY = yBottom + 4 + fontSize;
 
                             // Dibujar cada línea centrada horizontalmente
                             lines.forEach((line, idx) => {
