@@ -291,6 +291,8 @@
         .btn-save:hover { transform: translateY(-2px); box-shadow: 0 8px 20px rgba(16,185,129,0.45); }
         .btn-image { background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%); color: white; box-shadow: 0 4px 12px rgba(139,92,246,0.3); border: 2px solid transparent; font-size: 12px; padding: 9px 16px; }
         .btn-image:hover { transform: translateY(-2px); box-shadow: 0 8px 20px rgba(139,92,246,0.45); }
+        .btn-nota-vb { background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%); color: white; box-shadow: 0 4px 12px rgba(245,158,11,0.3); border: 2px solid transparent; font-size: 12px; padding: 9px 16px; }
+        .btn-nota-vb:hover { transform: translateY(-2px); box-shadow: 0 8px 20px rgba(245,158,11,0.45); }
 
         .toolbar.minimized .btn { padding: 5px 10px; font-size: 10px; gap: 3px; }
         .toolbar.minimized .btn-nav { padding: 5px 8px; font-size: 11px; }
@@ -461,6 +463,88 @@
             .notes-widget.maximized { width: 90vw; height: 70vh; right: 5vw; }
             .notes-widget.minimized { width: 48px; height: 48px; font-size: 24px; right: 20px; }
         }
+
+        /* ===== ESTILOS NOTA VB (VERDE Y AJUSTABLE) ===== */
+        .nota-vb-container {
+            position: absolute;
+            cursor: move;
+            border: 1px solid rgba(245, 158, 11, 0.6);
+            border-radius: 6px;
+            background: rgba(255, 255, 255, 0.92);
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+            padding: 8px 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            user-select: none;
+            font-family: 'Inter', sans-serif;
+            font-weight: 600;
+            color: #10b981; /* VERDE */
+            text-align: center;
+            line-height: 1.4;
+            transition: box-shadow 0.15s;
+            min-width: 100px;
+            min-height: 30px;
+            pointer-events: auto;
+            z-index: 5;
+            overflow: hidden;
+        }
+        .nota-vb-container:hover {
+            box-shadow: 0 4px 16px rgba(0,0,0,0.12);
+        }
+        .nota-vb-container .resize-handle {
+            position: absolute;
+            bottom: 0;
+            right: 0;
+            width: 16px;
+            height: 16px;
+            cursor: nw-resize;
+            background: rgba(245, 158, 11, 0.3);
+            border-radius: 0 0 6px 0;
+            display: flex;
+            align-items: flex-end;
+            justify-content: flex-end;
+            font-size: 10px;
+            color: rgba(245, 158, 11, 0.8);
+            padding: 0 2px 2px 0;
+            user-select: none;
+        }
+        .nota-vb-container .nota-text {
+            width: 100%;
+            height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            word-break: break-word;
+            color: #10b981; /* VERDE */
+            font-weight: 600;
+            line-height: 1.4;
+        }
+        .nota-vb-container .delete-btn-nota {
+            position: absolute;
+            top: -8px;
+            right: -8px;
+            background: var(--danger);
+            color: white;
+            border-radius: 50%;
+            width: 18px;
+            height: 18px;
+            font-size: 10px;
+            border: none;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 0;
+            box-shadow: 0 2px 6px rgba(239,68,68,0.3);
+            transition: all var(--transition);
+            z-index: 10;
+            border: 1px solid white;
+        }
+        .nota-vb-container .delete-btn-nota:hover {
+            transform: scale(1.2);
+            background: var(--danger-dark);
+        }
     </style>
 </head>
 <body>
@@ -490,11 +574,12 @@
                         <button class="btn btn-nav" id="next" onclick="onNextPage()"><i class="fa-solid fa-chevron-right"></i></button>
                     </div>
                     <button class="btn btn-replace" onmousedown="event.preventDefault(); aplicarCorreccion()"><i class="fa-solid fa-pen-to-square"></i> Reemplazar</button>
+                    <button class="btn btn-nota-vb" onclick="insertarNotaVB()"><i class="fa-solid fa-stamp"></i> Nota VB</button>
                     <button class="btn btn-image" onclick="document.getElementById('imageUpload').click()"><i class="fa-solid fa-image"></i> Imagen</button>
                     <input type="file" id="imageUpload" accept="image/*" style="display:none" onchange="handleImageUpload(event)">
                     <button class="btn btn-save" id="btnGuardar" onclick="verificarAutorYGuardar()" style="display:none;"><i class="fa-solid fa-floppy-disk"></i> Guardar</button>
                 </div>
-                <div class="toolbar-tip"><i class="fa-solid fa-lightbulb"></i><span><strong>Tip:</strong> Selecciona texto y presiona <strong>Supr</strong> para reemplazar. <strong>Ctrl+Z</strong> deshacer.</span></div>
+                <div class="toolbar-tip"><i class="fa-solid fa-lightbulb"></i><span><strong>Tip:</strong> Selecciona texto y presiona <strong>Supr</strong> para reemplazar. <strong>Ctrl+Z</strong> deshacer. Las notas VB se mueven y redimensionan arrastrando; la fuente se ajusta automáticamente.</span></div>
             </div>
         </div>
     </div>
@@ -594,6 +679,9 @@
         const mainToolbar = document.getElementById('mainToolbar');
         const toolbarToggle = document.getElementById('toolbarToggle');
         let isToolbarMinimized = false;
+
+        // Variables para arrastre y redimensionamiento
+        let draggingData = null;
 
         // ========== DRAG & DROP ==========
         const dropOverlay = document.getElementById('dropOverlay');
@@ -715,6 +803,42 @@
             showReplacementModal(textoSeleccionado, { x, y, width, height, textoSeleccionado });
         }
 
+        // ========== FUNCIÓN PARA INSERTAR NOTA VB ==========
+        function insertarNotaVB() {
+            if (!pdfDoc) {
+                alert("Primero debes cargar un PDF.");
+                return;
+            }
+
+            const textoNota = "NOTA: EL JEFE O SUPERVISOR DE LA SECCION DEBE VERIFICAR PRESENCIALMENTE LA ACTIVIDAD U OPERACION REALIZADA.";
+
+            const viewerRect = annotationsLayer.getBoundingClientRect();
+            const pageWidth = viewerRect.width;
+            const pageHeight = viewerRect.height;
+
+            const ancho = Math.min(pageWidth * 0.7, 500);
+            const alto = 60;
+
+            const x = (pageWidth - ancho) / 2;
+            const y = pageHeight - 150;
+
+            saveUndoState();
+            if (!annotationsData[pageNum]) annotationsData[pageNum] = [];
+            const id = Date.now() + Math.random() * 1000;
+            annotationsData[pageNum].push({
+                id: id,
+                x: x,
+                y: y,
+                width: ancho,
+                height: alto,
+                newText: textoNota,
+                type: 'nota-vb'
+            });
+
+            restaurarAnotaciones(pageNum);
+            showNotification('✅ Nota VB insertada en la página ' + pageNum, 'success');
+        }
+
         document.addEventListener('keydown', function(e) {
             if ((e.key === 'Backspace' || e.key === 'Delete') && document.activeElement.tagName !== 'TEXTAREA' && document.activeElement.tagName !== 'INPUT') {
                 const txt = window.getSelection().toString().trim();
@@ -777,22 +901,250 @@
         });
         modalOverlay.addEventListener('click', (e) => { if (e.target === modalOverlay) hideReplacementModal(); });
 
-        // ========== RESTORE ANNOTATIONS ==========
+        // ========== FUNCIÓN PARA ELIMINAR ==========
+        function borrarAnotacion(id, num) {
+            if (!confirm('¿Eliminar esta corrección?')) return;
+            saveUndoState();
+            if (annotationsData[num]) {
+                annotationsData[num] = annotationsData[num].filter(m => m.id !== id);
+                if (annotationsData[num].length === 0) {
+                    delete annotationsData[num];
+                }
+            }
+            restaurarAnotaciones(num);
+        }
+
+        // ========== FUNCIÓN PARA AJUSTAR FUENTE (AUTOMÁTICO) ==========
+        function ajustarFuenteNota(container, texto) {
+            const maxWidth = container.clientWidth - 20; // padding
+            const maxHeight = container.clientHeight - 16;
+            if (maxWidth <= 0 || maxHeight <= 0) return;
+
+            // Usar elemento temporal para medir
+            const temp = document.createElement('div');
+            temp.style.position = 'absolute';
+            temp.style.visibility = 'hidden';
+            temp.style.width = maxWidth + 'px';
+            temp.style.wordWrap = 'break-word';
+            temp.style.whiteSpace = 'normal';
+            temp.style.fontFamily = 'Inter, sans-serif';
+            temp.style.fontWeight = '600';
+            temp.style.lineHeight = '1.4';
+            temp.textContent = texto;
+            document.body.appendChild(temp);
+
+            let fontSize = 20;
+            let step = 1;
+            let found = false;
+
+            // Buscar el mayor tamaño que quepa
+            while (fontSize > 6) {
+                temp.style.fontSize = fontSize + 'px';
+                // Usamos scrollHeight para medir el alto total, y scrollWidth para el ancho
+                if (temp.scrollHeight <= maxHeight && temp.scrollWidth <= maxWidth) {
+                    found = true;
+                    break;
+                }
+                fontSize -= step;
+            }
+
+            // Si no se encontró, usar el mínimo
+            if (!found) fontSize = 6;
+
+            document.body.removeChild(temp);
+
+            // Aplicar el tamaño al texto
+            const textDiv = container.querySelector('.nota-text');
+            if (textDiv) {
+                textDiv.style.fontSize = fontSize + 'px';
+            }
+        }
+
+        // ========== RESTORE ANNOTATIONS CON ARRASTRE Y REDIMENSION ==========
         function restaurarAnotaciones(num) {
             annotationsLayer.innerHTML = '';
             if (!annotationsData[num]) return;
+
             annotationsData[num].forEach(marca => {
-                const div = document.createElement('div');
-                div.className = 'correction-mark';
-                div.style.cssText = `left:${marca.x}px;top:${marca.y}px;width:${marca.width}px;height:${marca.height}px;`;
-                div.innerHTML = `<div class="strike-line"></div><div class="new-text-label" onclick="editarAnotacion(${marca.id},${num})">${marca.newText}</div><button class="delete-btn" onclick="borrarAnotacion(${marca.id},${num})"><i class="fa-solid fa-xmark"></i></button>`;
-                annotationsLayer.appendChild(div);
+                if (marca.type === 'nota-vb') {
+                    // Crear contenedor de la nota
+                    const container = document.createElement('div');
+                    container.className = 'nota-vb-container';
+                    container.style.left = marca.x + 'px';
+                    container.style.top = marca.y + 'px';
+                    container.style.width = marca.width + 'px';
+                    container.style.height = marca.height + 'px';
+                    container.dataset.id = marca.id;
+                    container.dataset.num = num;
+
+                    // Texto
+                    const textDiv = document.createElement('div');
+                    textDiv.className = 'nota-text';
+                    textDiv.textContent = marca.newText;
+                    container.appendChild(textDiv);
+
+                    // Botón eliminar
+                    const deleteBtn = document.createElement('button');
+                    deleteBtn.className = 'delete-btn-nota';
+                    deleteBtn.innerHTML = '<i class="fa-solid fa-xmark"></i>';
+                    deleteBtn.onclick = function(e) {
+                        e.stopPropagation();
+                        e.preventDefault();
+                        borrarAnotacion(marca.id, num);
+                    };
+                    container.appendChild(deleteBtn);
+
+                    // Mango de redimensionamiento
+                    const resizeHandle = document.createElement('div');
+                    resizeHandle.className = 'resize-handle';
+                    resizeHandle.textContent = '◢';
+                    container.appendChild(resizeHandle);
+
+                    // Eventos de arrastre (sobre el contenedor)
+                    container.addEventListener('mousedown', function(e) {
+                        if (e.target.closest('.delete-btn-nota') || e.target.closest('.resize-handle')) return;
+                        e.preventDefault();
+                        iniciarArrastre(e, marca.id, num);
+                    });
+
+                    // Evento de redimensionamiento (sobre el mango)
+                    resizeHandle.addEventListener('mousedown', function(e) {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        iniciarRedimension(e, marca.id, num);
+                    });
+
+                    annotationsLayer.appendChild(container);
+
+                    // Ajustar fuente inicialmente
+                    requestAnimationFrame(() => {
+                        ajustarFuenteNota(container, marca.newText);
+                    });
+                } else {
+                    // Reemplazo normal
+                    const div = document.createElement('div');
+                    div.className = 'correction-mark';
+                    div.style.cssText = `left:${marca.x}px;top:${marca.y}px;width:${marca.width}px;height:${marca.height}px;`;
+                    div.innerHTML = `<div class="strike-line"></div><div class="new-text-label" onclick="editarAnotacion(${marca.id},${num})">${marca.newText}</div><button class="delete-btn" onclick="borrarAnotacion(${marca.id},${num})"><i class="fa-solid fa-xmark"></i></button>`;
+                    annotationsLayer.appendChild(div);
+                }
             });
         }
 
+        // ========== ARRASTRE ==========
+        function iniciarArrastre(e, id, num) {
+            const container = e.currentTarget;
+            const rect = container.getBoundingClientRect();
+
+            draggingData = {
+                id: id,
+                num: num,
+                offsetX: e.clientX - rect.left,
+                offsetY: e.clientY - rect.top,
+                width: rect.width,
+                height: rect.height
+            };
+
+            document.addEventListener('mousemove', onDragMove);
+            document.addEventListener('mouseup', onDragEnd);
+        }
+
+        function onDragMove(e) {
+            if (!draggingData) return;
+            const layerRect = annotationsLayer.getBoundingClientRect();
+            let newX = e.clientX - layerRect.left - draggingData.offsetX;
+            let newY = e.clientY - layerRect.top - draggingData.offsetY;
+
+            newX = Math.max(0, Math.min(newX, layerRect.width - draggingData.width));
+            newY = Math.max(0, Math.min(newY, layerRect.height - draggingData.height));
+
+            const marca = annotationsData[draggingData.num].find(m => m.id === draggingData.id);
+            if (marca) {
+                marca.x = newX;
+                marca.y = newY;
+                const container = annotationsLayer.querySelector(`.nota-vb-container[data-id="${draggingData.id}"]`);
+                if (container) {
+                    container.style.left = newX + 'px';
+                    container.style.top = newY + 'px';
+                }
+            }
+        }
+
+        function onDragEnd() {
+            draggingData = null;
+            document.removeEventListener('mousemove', onDragMove);
+            document.removeEventListener('mouseup', onDragEnd);
+            if (undoStack.length === 0 || JSON.stringify(undoStack[undoStack.length-1]) !== JSON.stringify(annotationsData)) {
+                saveUndoState();
+            }
+        }
+
+        // ========== REDIMENSIONAMIENTO CON AJUSTE DE FUENTE ==========
+        let resizeRAF = null;
+
+        function iniciarRedimension(e, id, num) {
+            const container = e.currentTarget.closest('.nota-vb-container');
+            const rect = container.getBoundingClientRect();
+
+            draggingData = {
+                id: id,
+                num: num,
+                startX: e.clientX,
+                startY: e.clientY,
+                startW: rect.width,
+                startH: rect.height,
+                mode: 'resize',
+                container: container
+            };
+
+            document.addEventListener('mousemove', onResizeMove);
+            document.addEventListener('mouseup', onResizeEnd);
+        }
+
+        function onResizeMove(e) {
+            if (!draggingData || draggingData.mode !== 'resize') return;
+            const dx = e.clientX - draggingData.startX;
+            const dy = e.clientY - draggingData.startY;
+
+            let newW = Math.max(80, draggingData.startW + dx);
+            let newH = Math.max(40, draggingData.startH + dy);
+
+            const marca = annotationsData[draggingData.num].find(m => m.id === draggingData.id);
+            if (marca) {
+                marca.width = newW;
+                marca.height = newH;
+                const container = annotationsLayer.querySelector(`.nota-vb-container[data-id="${draggingData.id}"]`);
+                if (container) {
+                    container.style.width = newW + 'px';
+                    container.style.height = newH + 'px';
+                    // Ajustar fuente con RAF
+                    if (resizeRAF) cancelAnimationFrame(resizeRAF);
+                    resizeRAF = requestAnimationFrame(() => {
+                        ajustarFuenteNota(container, marca.newText);
+                        resizeRAF = null;
+                    });
+                }
+            }
+        }
+
+        function onResizeEnd() {
+            draggingData = null;
+            document.removeEventListener('mousemove', onResizeMove);
+            document.removeEventListener('mouseup', onResizeEnd);
+            if (undoStack.length === 0 || JSON.stringify(undoStack[undoStack.length-1]) !== JSON.stringify(annotationsData)) {
+                saveUndoState();
+            }
+            if (resizeRAF) {
+                cancelAnimationFrame(resizeRAF);
+                resizeRAF = null;
+            }
+        }
+
+        // ========== EDITAR ANOTACIONES (solo reemplazos) ==========
         function editarAnotacion(id, num) {
             const marca = annotationsData[num].find(m => m.id === id);
-            if (!marca) return;
+            if (!marca || marca.type === 'nota-vb') return;
+
             originalTextDisplay.textContent = "Actual: " + marca.newText;
             replacementTextInput.value = marca.newText;
             modalTitle.innerHTML = '<i class="fa-solid fa-pen-to-square"></i> Editar Texto';
@@ -813,14 +1165,6 @@
                 if (txtMod) { marca.newText = txtMod; restaurarAnotaciones(num); }
                 hideReplacementModal(); applyReplacementBtn.onclick = origFn;
             };
-        }
-
-        function borrarAnotacion(id, num) {
-            if (confirm('¿Eliminar esta corrección?')) {
-                saveUndoState();
-                annotationsData[num] = annotationsData[num].filter(m => m.id !== id);
-                restaurarAnotaciones(num);
-            }
         }
 
         // ========== IMAGE UPLOAD ==========
@@ -890,11 +1234,11 @@
                     const xA = 45, yA = h - 85, yF = h - 105;
                     p.drawRectangle({ x: xA-4, y: yA-4, width: fontBold.widthOfTextAtSize(elaboradoPor, 12) + 10, height: 20, color: rgb(0.95, 0.97, 1), opacity: 0.25 });
                     p.drawText(elaboradoPor, { x: xA, y: yA, size: 12, font: fontBold, color: rgb(0.1, 0.2, 0.4) });
-                    p.drawRectangle({ x: xA-4, y: yF-4, width: fontBold.widthOfTextAtSize(fecha, 10) + 10, height: 18, color: rgb(0.95, 0.97, 1), opacity: 0.2 });
-                    p.drawText(fecha, { x: xA, y: yF, size: 10, font: fontBold, color: rgb(0.2, 0.35, 0.6) });
+                    p.drawRectangle({ x: xA-4, y: yF-4, width: fontBold.widthOfTextAtSize(fecha, 12) + 10, height: 20, color: rgb(0.95, 0.97, 1), opacity: 0.2 });
+                    p.drawText(fecha, { x: xA, y: yF, size: 12, font: fontBold, color: rgb(0.1, 0.2, 0.4) });
                 }
 
-                // Anotaciones (reemplazos)
+                // Anotaciones
                 for (const [num, marcas] of Object.entries(annotationsData)) {
                     if (!marcas || marcas.length === 0) continue;
                     const pageIndex = parseInt(num) - 1;
@@ -911,9 +1255,62 @@
                         const fs = Math.max(hR * 0.75, 6);
                         const tw = font.widthOfTextAtSize(m.newText, fs);
 
-                        page.drawLine({ start: {x: xR, y: yCenter}, end: {x: xR + wR, y: yCenter}, thickness: 1.5, color: rgb(1, 0, 0) });
-                        page.drawRectangle({ x: xR - 1, y: yTop - hR, width: tw + 4, height: hR, color: rgb(1, 1, 1), opacity: 0.65 });
-                        page.drawText(m.newText, { x: xR, y: yCenter - (fs * 0.25), size: fs, font: font, color: rgb(0, 0.45, 0) });
+                        if (m.type === 'nota-vb') {
+                            // Dibujar nota VB con borde y fondo
+                            page.drawRectangle({
+                                x: xR,
+                                y: yTop - hR,
+                                width: wR,
+                                height: hR,
+                                color: rgb(0.96, 0.76, 0.04),
+                                opacity: 0.12,
+                                borderWidth: 1,
+                                borderColor: rgb(0.96, 0.76, 0.04)
+                            });
+                            page.drawRectangle({
+                                x: xR + 2,
+                                y: yTop - hR + 2,
+                                width: wR - 4,
+                                height: hR - 4,
+                                color: rgb(1, 1, 1),
+                                opacity: 0.9
+                            });
+                            // Texto en verde
+                            const lines = [];
+                            const words = m.newText.split(' ');
+                            let line = '';
+                            for (const word of words) {
+                                const testLine = line + ' ' + word;
+                                // Usamos la fuente bold para medir
+                                if (fontBold.widthOfTextAtSize(testLine.trim(), 11) < wR - 20) {
+                                    line = testLine;
+                                } else {
+                                    lines.push(line.trim());
+                                    line = word;
+                                }
+                            }
+                            if (line) lines.push(line.trim());
+
+                            const totalHeight = lines.length * 18;
+                            const startY = yTop - hR + (hR - totalHeight) / 2 + 14;
+
+                            lines.forEach((line, idx) => {
+                                const lineWidth = fontBold.widthOfTextAtSize(line, 11);
+                                const xPos = xR + (wR - lineWidth) / 2;
+                                page.drawText(line, {
+                                    x: xPos,
+                                    y: startY + idx * 18,
+                                    size: 11,
+                                    font: fontBold,
+                                    color: rgb(0.06, 0.6, 0.06) // verde
+                                });
+                            });
+                        } else {
+                            // Reemplazo normal
+                            page.drawLine({ start: {x: xR, y: yCenter}, end: {x: xR + wR, y: yCenter}, thickness: 1.5, color: rgb(1, 0, 0) });
+                            page.drawRectangle({ x: xR - 1, y: yTop - hR, width: tw + 4, height: hR, color: rgb(1, 1, 1), opacity: 0.65 });
+                            page.drawText(m.newText, { x: xR, y: yCenter - (fs * 0.25), size: fs, font: font, color: rgb(0, 0.45, 0) });
+                        }
                     });
                 }
 
