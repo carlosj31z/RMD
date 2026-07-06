@@ -579,7 +579,7 @@
                     <input type="file" id="imageUpload" accept="image/*" style="display:none" onchange="handleImageUpload(event)">
                     <button class="btn btn-save" id="btnGuardar" onclick="verificarAutorYGuardar()" style="display:none;"><i class="fa-solid fa-floppy-disk"></i> Guardar</button>
                 </div>
-                <div class="toolbar-tip"><i class="fa-solid fa-lightbulb"></i><span><strong>Tip:</strong> Selecciona texto y presiona <strong>Supr</strong> para reemplazar. <strong>Ctrl+Z</strong> deshacer. La nota VB se exporta sin desbordarse.</span></div>
+                <div class="toolbar-tip"><i class="fa-solid fa-lightbulb"></i><span><strong>Tip:</strong> Selecciona texto y presiona <strong>Supr</strong> para reemplazar. <strong>Ctrl+Z</strong> deshacer. La nota VB se exporta sin espacios en blanco.</span></div>
             </div>
         </div>
     </div>
@@ -833,7 +833,7 @@
                 height: alto,
                 newText: textoNota,
                 type: 'nota-vb',
-                fontSize: 14 // valor inicial, se recalculará al mostrar
+                fontSize: 14
             });
 
             restaurarAnotaciones(pageNum);
@@ -915,7 +915,7 @@
             restaurarAnotaciones(num);
         }
 
-        // ========== FUNCIÓN PARA AJUSTAR FUENTE EN PANTALLA ==========
+        // ========== FUNCIÓN PARA AJUSTAR FUENTE EN PANTALLA (con guardado de fontSize) ==========
         function ajustarFuenteNota(container, texto, marca) {
             const maxWidth = container.clientWidth - 20;
             const maxHeight = container.clientHeight - 16;
@@ -955,7 +955,7 @@
                 textDiv.style.fontSize = fontSize + 'px';
             }
 
-            // Guardar el tamaño de fuente en la anotación para usarlo al exportar
+            // Guardar el tamaño de fuente en la anotación
             if (marca) {
                 const num = parseInt(container.dataset.num);
                 const id = parseInt(container.dataset.id);
@@ -1178,7 +1178,7 @@
             reader.readAsArrayBuffer(file);
         }
 
-        // ========== SAVE CON NOTA VB SIN DESBORDARSE ==========
+        // ========== SAVE CON NOTA VB SIN ESPACIOS EN BLANCO ==========
         function verificarAutorYGuardar() {
             if (txtElaborado.value.trim() === "") { confirmAuthorModal.style.display = 'flex'; }
             else { guardarPDFEnPC(); }
@@ -1199,57 +1199,22 @@
         });
         confirmAuthorModal.addEventListener('click', (e) => { if (e.target === confirmAuthorModal) confirmAuthorModal.style.display = 'none'; });
 
-        // Función para calcular el tamaño de fuente óptimo en el PDF
-        function calcularTamanoFuentePDF(font, texto, anchoMax, altoMax) {
-            let mejorTamano = 6;
-            let mejoresLineas = [];
-
-            for (let fontSize = 24; fontSize >= 6; fontSize -= 0.5) {
-                const lines = [];
-                let currentLine = '';
-                const words = texto.split(' ');
-                for (const word of words) {
-                    const testLine = currentLine + (currentLine ? ' ' : '') + word;
-                    if (font.widthOfTextAtSize(testLine, fontSize) <= anchoMax) {
-                        currentLine = testLine;
-                    } else {
-                        if (currentLine) lines.push(currentLine);
-                        currentLine = word;
-                    }
-                }
-                if (currentLine) lines.push(currentLine);
-
-                const allFitWidth = lines.every(line => font.widthOfTextAtSize(line, fontSize) <= anchoMax);
-                if (!allFitWidth || lines.length === 0) continue;
-
-                const totalHeight = lines.length * fontSize * 1.3;
-                if (totalHeight <= altoMax) {
-                    mejorTamano = fontSize;
-                    mejoresLineas = lines;
-                    break;
+        // Función para obtener las líneas para un tamaño de fuente dado
+        function obtenerLineas(font, texto, fontSize, anchoMax) {
+            const lines = [];
+            let currentLine = '';
+            const words = texto.split(' ');
+            for (const word of words) {
+                const testLine = currentLine + (currentLine ? ' ' : '') + word;
+                if (font.widthOfTextAtSize(testLine, fontSize) <= anchoMax) {
+                    currentLine = testLine;
+                } else {
+                    if (currentLine) lines.push(currentLine);
+                    currentLine = word;
                 }
             }
-
-            // Fallback
-            if (mejoresLineas.length === 0) {
-                mejorTamano = 6;
-                const lines = [];
-                let currentLine = '';
-                const words = texto.split(' ');
-                for (const word of words) {
-                    const testLine = currentLine + (currentLine ? ' ' : '') + word;
-                    if (font.widthOfTextAtSize(testLine, mejorTamano) <= anchoMax) {
-                        currentLine = testLine;
-                    } else {
-                        if (currentLine) lines.push(currentLine);
-                        currentLine = word;
-                    }
-                }
-                if (currentLine) lines.push(currentLine);
-                mejoresLineas = lines;
-            }
-
-            return { fontSize: mejorTamano, lines: mejoresLineas };
+            if (currentLine) lines.push(currentLine);
+            return lines;
         }
 
         async function guardarPDFEnPC() {
@@ -1326,20 +1291,44 @@
                                 opacity: 0.9
                             });
 
-                            // Calcular tamaño de fuente óptimo en el PDF
-                            const anchoUtil = wR - 12;
-                            const altoUtil = hR - 10;
-                            const { fontSize, lines } = calcularTamanoFuentePDF(fontBold, m.newText, anchoUtil, altoUtil);
+                            // Obtener el fontSize guardado en la anotación (calculado en la vista previa)
+                            let fontSize = m.fontSize || 12;
+                            // Dividir el texto en líneas usando ese fontSize
+                            let lines = obtenerLineas(fontBold, m.newText, fontSize, wR - 12);
 
+                            // Si el bloque de texto excede el alto, reducir el fontSize
                             const lineHeight = fontSize * 1.3;
+                            let totalHeight = lines.length * lineHeight;
+                            if (totalHeight > hR - 10) {
+                                // Reducir el fontSize hasta que quepa
+                                for (let fs = fontSize - 0.5; fs >= 6; fs -= 0.5) {
+                                    lines = obtenerLineas(fontBold, m.newText, fs, wR - 12);
+                                    const lh = fs * 1.3;
+                                    totalHeight = lines.length * lh;
+                                    if (totalHeight <= hR - 10) {
+                                        fontSize = fs;
+                                        break;
+                                    }
+                                }
+                            }
+
+                            // Ahora calcular el interlineado para llenar exactamente el alto disponible
+                            const altoDisponible = hR - 10; // padding de 5px arriba y abajo
+                            const lineHeightFinal = (lines.length > 1) ? (altoDisponible - fontSize) / (lines.length - 1) : fontSize * 1.3;
+                            // Asegurar que el interlineado no sea menor que fontSize * 0.8
+                            const finalLineHeight = Math.max(fontSize * 0.8, Math.min(lineHeightFinal, fontSize * 2.5));
+                            const totalHeightFinal = lines.length * fontSize + (lines.length - 1) * (finalLineHeight - fontSize);
+
+                            // Posición Y de la primera línea (alineada arriba con 4px de padding)
                             const startY = yBottom + 4 + fontSize;
 
+                            // Dibujar cada línea centrada horizontalmente
                             lines.forEach((line, idx) => {
                                 const lineWidth = fontBold.widthOfTextAtSize(line, fontSize);
                                 const xPos = xR + (wR - lineWidth) / 2;
                                 page.drawText(line, {
                                     x: xPos,
-                                    y: startY - idx * lineHeight,
+                                    y: startY - idx * finalLineHeight,
                                     size: fontSize,
                                     font: fontBold,
                                     color: rgb(0.06, 0.6, 0.06)
