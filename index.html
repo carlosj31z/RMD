@@ -579,7 +579,7 @@
                     <input type="file" id="imageUpload" accept="image/*" style="display:none" onchange="handleImageUpload(event)">
                     <button class="btn btn-save" id="btnGuardar" onclick="verificarAutorYGuardar()" style="display:none;"><i class="fa-solid fa-floppy-disk"></i> Guardar</button>
                 </div>
-                <div class="toolbar-tip"><i class="fa-solid fa-lightbulb"></i><span><strong>Tip:</strong> Selecciona texto y presiona <strong>Supr</strong> para reemplazar. <strong>Ctrl+Z</strong> deshacer. Nota VB alineada a la derecha y arriba al exportar.</span></div>
+                <div class="toolbar-tip"><i class="fa-solid fa-lightbulb"></i><span><strong>Tip:</strong> Selecciona texto y presiona <strong>Supr</strong> para reemplazar. <strong>Ctrl+Z</strong> deshacer. La nota VB se exporta centrada y bien cuadrada.</span></div>
             </div>
         </div>
     </div>
@@ -1166,7 +1166,7 @@
             reader.readAsArrayBuffer(file);
         }
 
-        // ========== SAVE CON NOTA VB ALINEADA A LA DERECHA Y ARRIBA ==========
+        // ========== SAVE CON NOTA VB CENTRADA ==========
         function verificarAutorYGuardar() {
             if (txtElaborado.value.trim() === "") { confirmAuthorModal.style.display = 'flex'; }
             else { guardarPDFEnPC(); }
@@ -1187,7 +1187,7 @@
         });
         confirmAuthorModal.addEventListener('click', (e) => { if (e.target === confirmAuthorModal) confirmAuthorModal.style.display = 'none'; });
 
-        // Función para calcular líneas y tamaño de fuente, manteniendo el texto dentro del recuadro
+        // Función para calcular líneas y tamaño de fuente (centrado)
         function calcularTamanoFuenteYLineas(font, texto, anchoMax, altoMax) {
             // Probar tamaños de fuente de mayor a menor
             for (let fontSize = 24; fontSize >= 6; fontSize -= 0.5) {
@@ -1210,7 +1210,7 @@
                 const allFitWidth = lines.every(line => font.widthOfTextAtSize(line, fontSize) <= anchoMax);
                 if (!allFitWidth || lines.length === 0) continue;
 
-                // Calcular el interlineado necesario para ocupar todo el alto
+                // Calcular el interlineado necesario para ocupar todo el alto (pero sin exceder)
                 let lineHeight;
                 if (lines.length === 1) {
                     lineHeight = fontSize * 1.2;
@@ -1220,7 +1220,7 @@
                     const availableGap = altoMax - totalHeightLines;
                     const gap = Math.max(0, availableGap / (lines.length - 1));
                     lineHeight = fontSize + Math.max(gap, fontSize * 0.1);
-                    lineHeight = Math.min(lineHeight, fontSize * 2.5);
+                    lineHeight = Math.min(lineHeight, fontSize * 2.0);
                 }
 
                 const totalHeight = lines.length * fontSize + (lines.length - 1) * (lineHeight - fontSize);
@@ -1298,6 +1298,7 @@
                         const hR = m.height / scale;
                         const yTop = pageH - (m.y / scale);
                         const yBottom = yTop - hR;
+                        const yCenter = yTop - (hR / 2);
 
                         if (m.type === 'nota-vb') {
                             // Dibujar fondo y borde
@@ -1320,23 +1321,22 @@
                                 opacity: 0.9
                             });
 
-                            // Calcular tamaño de fuente y líneas óptimas
-                            const anchoUtil = wR - 6;   // padding horizontal mínimo
-                            const altoUtil = hR - 4;    // padding vertical mínimo
+                            // Calcular tamaño de fuente y líneas óptimas con padding reducido
+                            const anchoUtil = wR - 12;
+                            const altoUtil = hR - 10;
                             const { fontSize, lines, lineHeight } = calcularTamanoFuenteYLineas(fontBold, m.newText, anchoUtil, altoUtil);
 
-                            // Posición inicial: esquina superior derecha del rectángulo (con padding mínimo)
-                            const startX = xR + wR - 4; // borde derecho menos padding
-                            const startY = yTop - 4;    // borde superior menos padding
+                            // Calcular posición Y inicial para centrar verticalmente
+                            const totalHeight = lines.length * lineHeight;
+                            const startY = yBottom + (hR - totalHeight) / 2 + fontSize * 0.85;
 
-                            // Dibujar cada línea alineada a la derecha
+                            // Dibujar cada línea centrada horizontalmente
                             lines.forEach((line, idx) => {
                                 const lineWidth = fontBold.widthOfTextAtSize(line, fontSize);
-                                const xPos = startX - lineWidth; // pegado a la derecha
-                                const yPos = startY - idx * lineHeight;
+                                const xPos = xR + (wR - lineWidth) / 2;
                                 page.drawText(line, {
                                     x: xPos,
-                                    y: yPos,
+                                    y: startY - idx * lineHeight,
                                     size: fontSize,
                                     font: fontBold,
                                     color: rgb(0.06, 0.6, 0.06) // verde
@@ -1345,7 +1345,6 @@
 
                         } else {
                             // Reemplazo normal
-                            const yCenter = yTop - (hR / 2);
                             const fs = Math.max(hR * 0.75, 6);
                             const tw = font.widthOfTextAtSize(m.newText, fs);
                             page.drawLine({ start: {x: xR, y: yCenter}, end: {x: xR + wR, y: yCenter}, thickness: 1.5, color: rgb(1, 0, 0) });
@@ -1355,7 +1354,7 @@
                     });
                 }
 
-                // Notas adicionales (sin cambios)
+                // Notas adicionales
                 if (notasAdicionales) {
                     const fsN = 11, lh = 16, mg = 50, uw = 595.28 - mg * 2;
                     const lines = [];
