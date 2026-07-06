@@ -579,7 +579,7 @@
                     <input type="file" id="imageUpload" accept="image/*" style="display:none" onchange="handleImageUpload(event)">
                     <button class="btn btn-save" id="btnGuardar" onclick="verificarAutorYGuardar()" style="display:none;"><i class="fa-solid fa-floppy-disk"></i> Guardar</button>
                 </div>
-                <div class="toolbar-tip"><i class="fa-solid fa-lightbulb"></i><span><strong>Tip:</strong> Selecciona texto y presiona <strong>Supr</strong> para reemplazar. <strong>Ctrl+Z</strong> deshacer. La nota VB se exporta centrada y bien cuadrada.</span></div>
+                <div class="toolbar-tip"><i class="fa-solid fa-lightbulb"></i><span><strong>Tip:</strong> Selecciona texto y presiona <strong>Supr</strong> para reemplazar. <strong>Ctrl+Z</strong> deshacer. La nota VB se exporta centrada perfectamente.</span></div>
             </div>
         </div>
     </div>
@@ -1166,7 +1166,7 @@
             reader.readAsArrayBuffer(file);
         }
 
-        // ========== SAVE CON NOTA VB CENTRADA ==========
+        // ========== SAVE CON NOTA VB CENTRADA PERFECTA ==========
         function verificarAutorYGuardar() {
             if (txtElaborado.value.trim() === "") { confirmAuthorModal.style.display = 'flex'; }
             else { guardarPDFEnPC(); }
@@ -1326,9 +1326,11 @@
                             const altoUtil = hR - 10;
                             const { fontSize, lines, lineHeight } = calcularTamanoFuenteYLineas(fontBold, m.newText, anchoUtil, altoUtil);
 
-                            // Calcular posición Y inicial para centrar verticalmente
-                            const totalHeight = lines.length * lineHeight;
-                            const startY = yBottom + (hR - totalHeight) / 2 + fontSize * 0.85;
+                            // Calcular altura total del bloque de texto
+                            const totalHeight = lines.length * fontSize + (lines.length - 1) * (lineHeight - fontSize);
+
+                            // Posición Y de la línea base de la primera línea para centrar verticalmente
+                            const startY = yBottom + (hR - totalHeight) / 2 + fontSize;
 
                             // Dibujar cada línea centrada horizontalmente
                             lines.forEach((line, idx) => {
