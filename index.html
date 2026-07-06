@@ -1166,7 +1166,7 @@
             reader.readAsArrayBuffer(file);
         }
 
-        // ========== SAVE CON NOTA VB CENTRADA PERFECTA ==========
+        // ========== SAVE CON NOTA VB CENTRADA COMO BLOQUE ==========
         function verificarAutorYGuardar() {
             if (txtElaborado.value.trim() === "") { confirmAuthorModal.style.display = 'flex'; }
             else { guardarPDFEnPC(); }
@@ -1187,9 +1187,9 @@
         });
         confirmAuthorModal.addEventListener('click', (e) => { if (e.target === confirmAuthorModal) confirmAuthorModal.style.display = 'none'; });
 
-        // Función para calcular líneas y tamaño de fuente (centrado)
-        function calcularTamanoFuenteYLineas(font, texto, anchoMax, altoMax) {
-            // Probar tamaños de fuente de mayor a menor
+        // Función corregida para dividir el texto en líneas y calcular tamaño óptimo
+        function dividirTextoYCalcularFuente(font, texto, anchoMax, altoMax) {
+            // 1. Probar diferentes tamaños de fuente (de mayor a menor)
             for (let fontSize = 24; fontSize >= 6; fontSize -= 0.5) {
                 // Dividir en líneas según el ancho
                 const lines = [];
@@ -1210,26 +1210,16 @@
                 const allFitWidth = lines.every(line => font.widthOfTextAtSize(line, fontSize) <= anchoMax);
                 if (!allFitWidth || lines.length === 0) continue;
 
-                // Calcular el interlineado necesario para ocupar todo el alto (pero sin exceder)
-                let lineHeight;
-                if (lines.length === 1) {
-                    lineHeight = fontSize * 1.2;
-                } else {
-                    // Espacio total disponible para las líneas y los espacios entre ellas
-                    const totalHeightLines = lines.length * fontSize;
-                    const availableGap = altoMax - totalHeightLines;
-                    const gap = Math.max(0, availableGap / (lines.length - 1));
-                    lineHeight = fontSize + Math.max(gap, fontSize * 0.1);
-                    lineHeight = Math.min(lineHeight, fontSize * 2.0);
-                }
+                // Calcular la altura total del bloque de texto con interlineado 1.3
+                const lineHeight = fontSize * 1.3;
+                const totalHeight = lines.length * lineHeight;
 
-                const totalHeight = lines.length * fontSize + (lines.length - 1) * (lineHeight - fontSize);
                 if (totalHeight <= altoMax) {
                     return { fontSize: fontSize, lines: lines, lineHeight: lineHeight };
                 }
             }
 
-            // Fallback: usar tamaño mínimo
+            // Fallback
             const fontSize = 6;
             const lines = [];
             let currentLine = '';
@@ -1244,7 +1234,7 @@
                 }
             }
             if (currentLine) lines.push(currentLine);
-            return { fontSize: fontSize, lines: lines, lineHeight: fontSize * 1.2 };
+            return { fontSize: fontSize, lines: lines, lineHeight: fontSize * 1.3 };
         }
 
         async function guardarPDFEnPC() {
@@ -1321,16 +1311,16 @@
                                 opacity: 0.9
                             });
 
-                            // Calcular tamaño de fuente y líneas óptimas con padding reducido
+                            // Calcular división de líneas y tamaño de fuente
                             const anchoUtil = wR - 12;
                             const altoUtil = hR - 10;
-                            const { fontSize, lines, lineHeight } = calcularTamanoFuenteYLineas(fontBold, m.newText, anchoUtil, altoUtil);
+                            const { fontSize, lines, lineHeight } = dividirTextoYCalcularFuente(fontBold, m.newText, anchoUtil, altoUtil);
 
-                            // Calcular altura total del bloque de texto
-                            const totalHeight = lines.length * fontSize + (lines.length - 1) * (lineHeight - fontSize);
+                            // Calcular altura total del bloque
+                            const totalHeight = lines.length * lineHeight;
 
-                            // Posición Y de la línea base de la primera línea para centrar verticalmente
-                            const startY = yBottom + (hR - totalHeight) / 2 + fontSize;
+                            // Posición Y de la base de la primera línea para centrar verticalmente
+                            const startY = yBottom + (hR - totalHeight) / 2 + fontSize * 0.9;
 
                             // Dibujar cada línea centrada horizontalmente
                             lines.forEach((line, idx) => {
