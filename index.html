@@ -11,7 +11,7 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
 
     <style>
-        /* ===== ESTILOS COMPLETOS ===== */
+        /* ===== ESTILOS COMPLETOS (los mismos de antes) ===== */
         :root {
             --primary: #6366f1;
             --primary-dark: #4f46e5;
@@ -1166,7 +1166,7 @@
             reader.readAsArrayBuffer(file);
         }
 
-        // ========== SAVE (CORREGIDO PARA NOTA VB) ==========
+        // ========== SAVE (CORREGIDO: TEXTO DE ARRIBA A ABAJO) ==========
         function verificarAutorYGuardar() {
             if (txtElaborado.value.trim() === "") { confirmAuthorModal.style.display = 'flex'; }
             else { guardarPDFEnPC(); }
@@ -1218,7 +1218,25 @@
                 fontSize -= step;
             }
             if (!found) fontSize = 6;
-            return fontSize;
+            return { fontSize, lines: [] }; // Devolvemos fontSize, las líneas se calculan después
+        }
+
+        // Función para dividir texto en líneas según ancho y tamaño de fuente
+        function dividirTextoEnLineas(font, texto, fontSize, anchoMax) {
+            const lines = [];
+            let currentLine = '';
+            const words = texto.split(' ');
+            for (const word of words) {
+                const testLine = currentLine + (currentLine ? ' ' : '') + word;
+                if (font.widthOfTextAtSize(testLine, fontSize) <= anchoMax) {
+                    currentLine = testLine;
+                } else {
+                    if (currentLine) lines.push(currentLine);
+                    currentLine = word;
+                }
+            }
+            if (currentLine) lines.push(currentLine);
+            return lines;
         }
 
         async function guardarPDFEnPC() {
@@ -1271,13 +1289,14 @@
                         const wR = m.width / scale;
                         const hR = m.height / scale;
                         const yTop = pageH - (m.y / scale);
+                        const yBottom = yTop - hR; // parte inferior del rectángulo
                         const yCenter = yTop - (hR / 2);
 
                         if (m.type === 'nota-vb') {
-                            // Dibujar fondo y borde igual que en la vista
+                            // Dibujar fondo y borde
                             page.drawRectangle({
                                 x: xR,
-                                y: yTop - hR,
+                                y: yBottom,
                                 width: wR,
                                 height: hR,
                                 color: rgb(0.96, 0.76, 0.04),
@@ -1287,42 +1306,50 @@
                             });
                             page.drawRectangle({
                                 x: xR + 2,
-                                y: yTop - hR + 2,
+                                y: yBottom + 2,
                                 width: wR - 4,
                                 height: hR - 4,
                                 color: rgb(1, 1, 1),
                                 opacity: 0.9
                             });
 
-                            // Calcular el tamaño de fuente óptimo para que quepa en el rectángulo
-                            const fontSize = calcularTamanoFuentePDF(fontBold, m.newText, wR - 20, hR - 16);
-                            const lineHeight = 1.4;
-
-                            // Dividir en líneas según el ancho
-                            const lines = [];
-                            let currentLine = '';
-                            const words = m.newText.split(' ');
-                            for (const word of words) {
-                                const testLine = currentLine + (currentLine ? ' ' : '') + word;
-                                if (fontBold.widthOfTextAtSize(testLine, fontSize) <= wR - 20) {
-                                    currentLine = testLine;
-                                } else {
-                                    if (currentLine) lines.push(currentLine);
-                                    currentLine = word;
+                            // Calcular tamaño de fuente óptimo
+                            const anchoUtil = wR - 20;
+                            const altoUtil = hR - 16;
+                            let fontSize = 20;
+                            let step = 1;
+                            let found = false;
+                            while (fontSize > 6) {
+                                const lines = dividirTextoEnLineas(fontBold, m.newText, fontSize, anchoUtil);
+                                const totalHeight = lines.length * fontSize * 1.4;
+                                if (totalHeight <= altoUtil && lines.every(line => fontBold.widthOfTextAtSize(line, fontSize) <= anchoUtil)) {
+                                    found = true;
+                                    break;
                                 }
+                                fontSize -= step;
                             }
-                            if (currentLine) lines.push(currentLine);
+                            if (!found) fontSize = 6;
 
-                            const totalHeight = lines.length * fontSize * lineHeight;
-                            const startY = yTop - hR + (hR - totalHeight) / 2 + (fontSize * lineHeight * 0.8);
+                            // Obtener líneas con el tamaño final
+                            const lines = dividirTextoEnLineas(fontBold, m.newText, fontSize, anchoUtil);
+                            const lineHeight = fontSize * 1.4;
+                            const totalHeight = lines.length * lineHeight;
 
-                            // Dibujar cada línea centrada horizontalmente
+                            // Calcular posición Y para la primera línea (parte superior del texto)
+                            // Queremos que el texto esté centrado verticalmente en el rectángulo
+                            const startY = yBottom + (hR - totalHeight) / 2 + fontSize * 0.8;
+
+                            // Dibujar cada línea de ARRIBA HACIA ABAJO (restando en Y)
                             lines.forEach((line, idx) => {
                                 const lineWidth = fontBold.widthOfTextAtSize(line, fontSize);
                                 const xPos = xR + (wR - lineWidth) / 2;
                                 page.drawText(line, {
                                     x: xPos,
-                                    y: startY + idx * fontSize * lineHeight,
+                                    y: startY + idx * lineHeight, // Sumamos para bajar (porque Y crece hacia arriba en PDF, pero la primera línea está en startY, la siguiente más abajo se dibuja con Y menor, así que debemos restar)
+                                    // CORRECCIÓN: en PDFLib, Y positivo es hacia arriba, por lo que para dibujar de arriba a abajo debemos restar en Y.
+                                    // Sin embargo, como startY es la parte superior (Y alta), la siguiente línea debe estar más abajo (Y menor).
+                                    // Por lo tanto, restamos idx * lineHeight.
+                                    y: startY - idx * lineHeight,
                                     size: fontSize,
                                     font: fontBold,
                                     color: rgb(0.06, 0.6, 0.06) // verde
@@ -1334,7 +1361,7 @@
                             const fs = Math.max(hR * 0.75, 6);
                             const tw = font.widthOfTextAtSize(m.newText, fs);
                             page.drawLine({ start: {x: xR, y: yCenter}, end: {x: xR + wR, y: yCenter}, thickness: 1.5, color: rgb(1, 0, 0) });
-                            page.drawRectangle({ x: xR - 1, y: yTop - hR, width: tw + 4, height: hR, color: rgb(1, 1, 1), opacity: 0.65 });
+                            page.drawRectangle({ x: xR - 1, y: yBottom, width: tw + 4, height: hR, color: rgb(1, 1, 1), opacity: 0.65 });
                             page.drawText(m.newText, { x: xR, y: yCenter - (fs * 0.25), size: fs, font: font, color: rgb(0, 0.45, 0) });
                         }
                     });
