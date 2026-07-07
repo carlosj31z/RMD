@@ -11,7 +11,7 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
 
     <style>
-        /* ===== ESTILOS COMPLETOS ===== */
+        /* ===== ESTILOS COMPLETOS (sin cambios) ===== */
         :root {
             --primary: #6366f1;
             --primary-dark: #4f46e5;
@@ -934,7 +934,7 @@
                 div.style.top = nota.y + 'px';
                 div.style.width = nota.width + 'px';
                 div.style.height = nota.height + 'px';
-                div.style.fontSize = Math.min(14, nota.height * 0.2) + 'px'; // Tamaño de fuente proporcional
+                div.style.fontSize = Math.min(14, nota.height * 0.2) + 'px';
                 div.textContent = nota.text;
                 div.setAttribute('data-id', nota.id);
                 div.setAttribute('data-page', num);
@@ -971,7 +971,7 @@
             let resizing = false;
 
             element.addEventListener('mousedown', function(e) {
-                if (e.target === resizeHandle) return; // el resize se maneja aparte
+                if (e.target === resizeHandle) return;
                 e.preventDefault();
                 dragging = true;
                 startX = e.clientX;
@@ -1115,7 +1115,7 @@
                     });
                 }
 
-                // Notas V°B°
+                // Notas V°B° (AHORA GARANTIZA TEXTO COMPLETO)
                 for (const [num, notas] of Object.entries(notasVoboData)) {
                     if (!notas || notas.length === 0) continue;
                     const pageIndex = parseInt(num) - 1;
@@ -1125,11 +1125,12 @@
 
                     notas.forEach(nota => {
                         const xN = nota.x / scale;
-                        const yN = pageH - (nota.y / scale); // Arriba de la nota en coords PDF
+                        const yN = pageH - (nota.y / scale);
                         const wN = nota.width / scale;
                         const hN = nota.height / scale;
-                        const yBottom = yN - hN; // Abajo del cuadro
-                        // Dibujar rectángulo con borde verde claro
+                        const yBottom = yN - hN;
+                        
+                        // Dibujar rectángulo
                         page.drawRectangle({
                             x: xN,
                             y: yBottom,
@@ -1140,12 +1141,12 @@
                             color: rgb(1, 1, 1),
                             opacity: 0.8
                         });
-                        // Ajustar texto dentro del cuadro
-                        const texto = nota.text;
-                        const fontSize = Math.min(12, hN * 0.25);
-                        const lineHeight = fontSize * 1.4;
+
+                        // Tamaño de fuente adaptativo (mín 6pt, máx 12pt)
+                        const fontSize = Math.max(6, Math.min(12, hN * 0.3));
+                        const lineHeight = fontSize * 1.3;
                         const maxWidth = wN - 4;
-                        const words = texto.split(' ');
+                        const words = nota.text.split(' ');
                         const lines = [];
                         let currentLine = '';
                         for (const word of words) {
@@ -1159,22 +1160,22 @@
                         }
                         if (currentLine) lines.push(currentLine);
 
-                        let yText = yBottom + hN - fontSize - 2; // Empezar desde arriba
+                        // Dibujar todas las líneas, incluso si exceden el rectángulo
+                        let yText = yBottom + hN - fontSize - 2; // empezar arriba
                         for (const line of lines) {
-                            if (yText < yBottom + 2) break;
                             page.drawText(line, {
                                 x: xN + 2,
                                 y: yText,
                                 size: fontSize,
                                 font: font,
-                                color: rgb(0.02, 0.46, 0.33) // Verde oscuro
+                                color: rgb(0.02, 0.46, 0.33)
                             });
                             yText -= lineHeight;
                         }
                     });
                 }
 
-                // Notas adicionales
+                // Notas adicionales (sin cambios)
                 if (notasAdicionales) {
                     const fsN = 11, lh = 16, mg = 50, uw = 595.28 - mg * 2;
                     const lines = [];
@@ -1206,7 +1207,7 @@
                     });
                 }
 
-                // Imagen
+                // Imagen (sin cambios)
                 if (hayImagen && uploadedImageBytes) {
                     try {
                         let image;
