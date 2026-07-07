@@ -293,6 +293,11 @@
         .btn-image:hover { transform: translateY(-2px); box-shadow: 0 8px 20px rgba(139,92,246,0.45); }
         .btn-vobo { background: linear-gradient(135deg, #10b981 0%, #059669 100%); color: white; box-shadow: 0 4px 12px rgba(16,185,129,0.4); border: 2px solid transparent; font-size: 12px; padding: 9px 16px; }
         .btn-vobo:hover { transform: translateY(-2px); box-shadow: 0 8px 20px rgba(16,185,129,0.55); }
+        .btn-preview { background: linear-gradient(135deg, #a78bfa 0%, #8b5cf6 100%); color: white; box-shadow: 0 4px 12px rgba(139,92,246,0.35); border: 2px solid transparent; font-weight: 600; font-size: 12px; padding: 9px 16px; white-space: nowrap; }
+        .btn-preview:hover { transform: translateY(-2px); box-shadow: 0 8px 20px rgba(139,92,246,0.5); }
+        .btn-preview .btn-text { display: inline; }
+        .toolbar.minimized .btn-preview .btn-text { display: none; }
+        .toolbar.minimized .btn-preview { padding: 5px 10px; font-size: 10px; gap: 3px; }
 
         .toolbar.minimized .btn { padding: 5px 10px; font-size: 10px; gap: 3px; }
         .toolbar.minimized .btn-nav { padding: 5px 8px; font-size: 11px; }
@@ -353,6 +358,32 @@
         .confirm-modal h3 { color: var(--dark); margin-bottom: 8px; font-size: 18px; font-weight: 700; }
         .confirm-modal p { color: var(--gray); margin-bottom: 20px; line-height: 1.5; font-size: 13px; }
         .confirm-modal .btn-group { display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; }
+
+        /* ========== PREVIEW MODAL ========== */
+        .preview-modal-overlay {
+            display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(15,23,42,0.85); z-index: 10002; justify-content: center; align-items: center;
+            backdrop-filter: blur(10px); animation: fadeIn 0.3s ease;
+        }
+        .preview-modal {
+            background: white; border-radius: var(--radius-xl); width: 95%; height: 90%;
+            max-width: 1100px; box-shadow: var(--shadow-xl); display: flex; flex-direction: column;
+            animation: scaleIn 0.35s ease; overflow: hidden;
+        }
+        .preview-header {
+            background: linear-gradient(135deg, #a78bfa 0%, #8b5cf6 100%); color: white;
+            padding: 12px 20px; display: flex; justify-content: space-between; align-items: center;
+            font-weight: 600; font-size: 16px;
+        }
+        .preview-close {
+            background: rgba(255,255,255,0.2); border: none; color: white; font-size: 18px;
+            cursor: pointer; width: 32px; height: 32px; border-radius: 50%; display: flex;
+            align-items: center; justify-content: center; transition: all var(--transition);
+        }
+        .preview-close:hover { background: rgba(255,255,255,0.35); transform: rotate(90deg); }
+        .preview-iframe {
+            flex: 1; width: 100%; border: none; border-radius: 0 0 var(--radius-xl) var(--radius-xl);
+        }
 
         /* ========== PDF CONTAINER ========== */
         .pdf-wrapper { display: flex; justify-content: center; margin-top: 8px; position: relative; z-index: 1; }
@@ -517,6 +548,7 @@
             .btn { padding: 5px 10px; font-size: 10px; }
             .notes-widget.maximized { width: 90vw; height: 70vh; right: 5vw; }
             .notes-widget.minimized { width: 48px; height: 48px; font-size: 24px; right: 20px; }
+            .preview-modal { width: 100%; height: 100%; border-radius: 0; }
         }
     </style>
 </head>
@@ -539,6 +571,9 @@
                         <input type="text" id="txtElaborado" placeholder="Nombre..." />
                         <span class="author-required-indicator"><i class="fa-solid fa-triangle-exclamation"></i> Requerido</span>
                     </div>
+                    <button class="btn btn-preview" id="btnVistaPrevia" onclick="previsualizarPDF()" style="display:none;">
+                        <i class="fa-solid fa-eye"></i> <span class="btn-text">Vista Previa</span>
+                    </button>
                 </div>
                 <div class="toolbar-row">
                     <div class="page-controls">
@@ -554,6 +589,17 @@
                 </div>
                 <div class="toolbar-tip"><i class="fa-solid fa-lightbulb"></i><span><strong>Tip:</strong> Selecciona texto y presiona <strong>Supr</strong> para reemplazar. <strong>Ctrl+Z</strong> deshacer.</span></div>
             </div>
+        </div>
+    </div>
+
+    <!-- Preview Modal -->
+    <div class="preview-modal-overlay" id="previewModalOverlay">
+        <div class="preview-modal">
+            <div class="preview-header">
+                <span><i class="fa-solid fa-eye"></i> Vista previa del PDF modificado</span>
+                <button class="preview-close" id="closePreviewBtn"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            <iframe class="preview-iframe" id="previewIframe" src=""></iframe>
         </div>
     </div>
 
@@ -656,6 +702,11 @@
 
         const TEXTO_NOTA_VOBO = "NOTA: EL JEFE O SUPERVISOR DE LA SECCION DEBE VERIFICAR PRESENCIALMENTE LA ACTIVIDAD U OPERACION REALIZADA";
 
+        // Preview modal elements
+        const previewModalOverlay = document.getElementById('previewModalOverlay');
+        const previewIframe = document.getElementById('previewIframe');
+        const closePreviewBtn = document.getElementById('closePreviewBtn');
+
         // ========== DRAG & DROP ==========
         const dropOverlay = document.getElementById('dropOverlay');
         document.addEventListener('dragover', (e) => {
@@ -714,6 +765,7 @@
                 pdfDoc = pdfDoc_;
                 document.getElementById('page_count').textContent = pdfDoc.numPages;
                 document.getElementById('btnGuardar').style.display = 'inline-flex';
+                document.getElementById('btnVistaPrevia').style.display = 'inline-flex';
                 notesWidget.classList.add('visible');
                 closeNotesWidget();
                 annotationsData = {};
@@ -1024,6 +1076,173 @@
             reader.readAsArrayBuffer(file);
         }
 
+        // ========== GENERACIÓN DE PDF (compartida) ==========
+        async function generarPDFModificado() {
+            if (!pdfBytesOriginal) throw new Error("No hay PDF cargado.");
+
+            const notasAdicionales = txtNotasAdicionales.value.trim();
+            const elaboradoPor = txtElaborado.value.trim();
+
+            const { PDFDocument, rgb, StandardFonts } = PDFLib;
+            const doc = await PDFDocument.load(pdfBytesOriginal);
+            const pages = doc.getPages();
+            const font = await doc.embedFont(StandardFonts.Helvetica);
+            const fontBold = await doc.embedFont(StandardFonts.HelveticaBold);
+
+            const now = new Date();
+            const fecha = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-${String(now.getDate()).padStart(2,'0')}`;
+
+            if (elaboradoPor && pages.length > 0) {
+                const p = pages[0];
+                const h = p.getHeight();
+                const xA = 45, yA = h - 85, yF = h - 105;
+                p.drawRectangle({ x: xA-4, y: yA-4, width: fontBold.widthOfTextAtSize(elaboradoPor, 12) + 10, height: 20, color: rgb(0.95, 0.97, 1), opacity: 0.25 });
+                p.drawText(elaboradoPor, { x: xA, y: yA, size: 12, font: fontBold, color: rgb(0.1, 0.2, 0.4) });
+                p.drawRectangle({ x: xA-4, y: yF-4, width: fontBold.widthOfTextAtSize(fecha, 12) + 10, height: 20, color: rgb(0.95, 0.97, 1), opacity: 0.2 });
+                p.drawText(fecha, { x: xA, y: yF, size: 12, font: fontBold, color: rgb(0.1, 0.2, 0.4) });
+            }
+
+            for (const [num, marcas] of Object.entries(annotationsData)) {
+                if (!marcas || marcas.length === 0) continue;
+                const pageIndex = parseInt(num) - 1;
+                if (pageIndex >= pages.length) continue;
+                const page = pages[pageIndex];
+                const pageH = page.getHeight();
+                marcas.forEach(m => {
+                    const xR = m.x / scale;
+                    const wR = m.width / scale;
+                    const hR = m.height / scale;
+                    const yTop = pageH - (m.y / scale);
+                    const yCenter = yTop - (hR / 2);
+                    const fs = Math.max(hR * 0.75, 6);
+                    const tw = font.widthOfTextAtSize(m.newText, fs);
+                    page.drawLine({ start: {x: xR, y: yCenter}, end: {x: xR + wR, y: yCenter}, thickness: 1.5, color: rgb(1, 0, 0) });
+                    page.drawRectangle({ x: xR - 1, y: yTop - hR, width: tw + 4, height: hR, color: rgb(1, 1, 1), opacity: 0.65 });
+                    page.drawText(m.newText, { x: xR, y: yCenter - (fs * 0.25), size: fs, font: font, color: rgb(0, 0.45, 0) });
+                });
+            }
+
+            for (const [num, notas] of Object.entries(notasVoboData)) {
+                if (!notas || notas.length === 0) continue;
+                const pageIndex = parseInt(num) - 1;
+                if (pageIndex >= pages.length) continue;
+                const page = pages[pageIndex];
+                const pageH = page.getHeight();
+
+                notas.forEach(nota => {
+                    const xN = nota.x / scale;
+                    const yN = pageH - (nota.y / scale);
+                    const wN = nota.width / scale;
+                    const hN = nota.height / scale;
+                    const yBottom = yN - hN;
+
+                    const maxWidth = wN - 4;
+                    const availableHeight = hN - 4;
+
+                    function getLines(fontSize) {
+                        const words = nota.text.split(' ');
+                        const lines = [];
+                        let currentLine = '';
+                        for (const word of words) {
+                            const testLine = currentLine ? currentLine + ' ' + word : word;
+                            if (fontBold.widthOfTextAtSize(testLine, fontSize) < maxWidth || currentLine === '') {
+                                currentLine = testLine;
+                            } else {
+                                lines.push(currentLine);
+                                currentLine = word;
+                            }
+                        }
+                        if (currentLine) lines.push(currentLine);
+                        return lines;
+                    }
+
+                    let fontSize = 12;
+                    const minFontSize = 4;
+                    let bestFontSize = minFontSize;
+                    let bestLines = [];
+
+                    while (fontSize >= minFontSize) {
+                        const lines = getLines(fontSize);
+                        const lineHeight = fontSize * 1.2;
+                        const totalHeight = lines.length * lineHeight;
+                        if (totalHeight <= availableHeight) {
+                            bestFontSize = fontSize;
+                            bestLines = lines;
+                            break;
+                        }
+                        fontSize -= 0.5;
+                    }
+
+                    if (bestLines.length === 0) {
+                        bestFontSize = minFontSize;
+                        bestLines = getLines(minFontSize);
+                        const lineHeight = bestFontSize * 1.2;
+                        const maxLines = Math.floor(availableHeight / lineHeight);
+                        bestLines = bestLines.slice(0, maxLines);
+                    }
+
+                    const lineHeight = bestFontSize * 1.2;
+                    let yText = yBottom + hN - bestFontSize - 2;
+                    for (const line of bestLines) {
+                        page.drawText(line, {
+                            x: xN + 2,
+                            y: yText,
+                            size: bestFontSize,
+                            font: fontBold,
+                            color: rgb(0.024, 0.373, 0.275)
+                        });
+                        yText -= lineHeight;
+                    }
+                });
+            }
+
+            if (notasAdicionales) {
+                const fsN = 11, lh = 16, mg = 50, uw = 595.28 - mg * 2;
+                const lines = [];
+                notasAdicionales.split('\n').forEach(p => {
+                    if (!p) { lines.push(''); return; }
+                    const words = p.split(' ');
+                    let line = words[0] || '';
+                    for (let i = 1; i < words.length; i++) {
+                        if (font.widthOfTextAtSize(line + ' ' + words[i], fsN) < uw) {
+                            line += ' ' + words[i];
+                        } else {
+                            lines.push(line);
+                            line = words[i];
+                        }
+                    }
+                    lines.push(line);
+                });
+                const makePage = (first) => {
+                    const np = doc.addPage([595.28, 842.89]);
+                    np.drawText(first ? "ANEXO: Notas y Pasos Adicionales" : "ANEXO: Notas (Continuación)", { x: mg, y: np.getHeight() - 80, size: 16, font: fontBold, color: rgb(0.1, 0.2, 0.4) });
+                    np.drawText(`Generado el: ${fecha}`, { x: mg, y: np.getHeight() - 100, size: 10, font: fontBold, color: rgb(0.2, 0.35, 0.6) });
+                    return { page: np, y: np.getHeight() - 140 };
+                };
+                let { page: cp, y: cy } = makePage(true);
+                lines.forEach(line => {
+                    if (cy < 60) { const n = makePage(false); cp = n.page; cy = n.y; }
+                    cp.drawText(line, { x: mg, y: cy, size: fsN, font: font, color: rgb(0, 0, 0) });
+                    cy -= lh;
+                });
+            }
+
+            if (uploadedImageBytes) {
+                try {
+                    let image;
+                    if (uploadedImageType === 'image/png') image = await doc.embedPng(uploadedImageBytes);
+                    else if (uploadedImageType === 'image/jpeg' || uploadedImageType === 'image/jpg') image = await doc.embedJpg(uploadedImageBytes);
+                    else { try { image = await doc.embedPng(uploadedImageBytes); } catch { image = await doc.embedJpg(uploadedImageBytes); } }
+                    const imgPage = doc.addPage([595.28, 842.89]);
+                    const dims = image.scaleToFit(500, 700);
+                    imgPage.drawImage(image, { x: (595.28 - dims.width) / 2, y: (842.89 - dims.height) / 2, width: dims.width, height: dims.height });
+                } catch (imgError) { console.warn("Error al incrustar imagen:", imgError); }
+            }
+
+            const bytes = await doc.save();
+            return bytes;
+        }
+
         // ========== SAVE ==========
         function verificarAutorYGuardar() {
             if (txtElaborado.value.trim() === "") { confirmAuthorModal.style.display = 'flex'; }
@@ -1046,180 +1265,8 @@
         confirmAuthorModal.addEventListener('click', (e) => { if (e.target === confirmAuthorModal) confirmAuthorModal.style.display = 'none'; });
 
         async function guardarPDFEnPC() {
-            if (!pdfBytesOriginal) { alert("No hay PDF cargado."); return; }
             try {
-                const notasAdicionales = txtNotasAdicionales.value.trim();
-                const elaboradoPor = txtElaborado.value.trim();
-                const hayMarcas = Object.values(annotationsData).some(p => p && p.length > 0);
-                const hayNotasVobo = Object.values(notasVoboData).some(p => p && p.length > 0);
-                const hayImagen = uploadedImageBytes !== null;
-
-                if (!hayMarcas && !notasAdicionales && !elaboradoPor && !hayImagen && !hayNotasVobo) {
-                    alert("No hay cambios para guardar.");
-                    return;
-                }
-
-                const { PDFDocument, rgb, StandardFonts } = PDFLib;
-                const doc = await PDFDocument.load(pdfBytesOriginal);
-                const pages = doc.getPages();
-                const font = await doc.embedFont(StandardFonts.Helvetica);
-                const fontBold = await doc.embedFont(StandardFonts.HelveticaBold);
-
-                const now = new Date();
-                const fecha = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-${String(now.getDate()).padStart(2,'0')}`;
-
-                if (elaboradoPor && pages.length > 0) {
-                    const p = pages[0];
-                    const h = p.getHeight();
-                    const xA = 45, yA = h - 85, yF = h - 105;
-                    p.drawRectangle({ x: xA-4, y: yA-4, width: fontBold.widthOfTextAtSize(elaboradoPor, 12) + 10, height: 20, color: rgb(0.95, 0.97, 1), opacity: 0.25 });
-                    p.drawText(elaboradoPor, { x: xA, y: yA, size: 12, font: fontBold, color: rgb(0.1, 0.2, 0.4) });
-                    p.drawRectangle({ x: xA-4, y: yF-4, width: fontBold.widthOfTextAtSize(fecha, 12) + 10, height: 20, color: rgb(0.95, 0.97, 1), opacity: 0.2 });
-                    p.drawText(fecha, { x: xA, y: yF, size: 12, font: fontBold, color: rgb(0.1, 0.2, 0.4) });
-                }
-
-                for (const [num, marcas] of Object.entries(annotationsData)) {
-                    if (!marcas || marcas.length === 0) continue;
-                    const pageIndex = parseInt(num) - 1;
-                    if (pageIndex >= pages.length) continue;
-                    const page = pages[pageIndex];
-                    const pageH = page.getHeight();
-                    marcas.forEach(m => {
-                        const xR = m.x / scale;
-                        const wR = m.width / scale;
-                        const hR = m.height / scale;
-                        const yTop = pageH - (m.y / scale);
-                        const yCenter = yTop - (hR / 2);
-                        const fs = Math.max(hR * 0.75, 6);
-                        const tw = font.widthOfTextAtSize(m.newText, fs);
-                        page.drawLine({ start: {x: xR, y: yCenter}, end: {x: xR + wR, y: yCenter}, thickness: 1.5, color: rgb(1, 0, 0) });
-                        page.drawRectangle({ x: xR - 1, y: yTop - hR, width: tw + 4, height: hR, color: rgb(1, 1, 1), opacity: 0.65 });
-                        page.drawText(m.newText, { x: xR, y: yCenter - (fs * 0.25), size: fs, font: font, color: rgb(0, 0.45, 0) });
-                    });
-                }
-
-                // NOTAS V°B°: fuente ajustable para que el texto completo quepa dentro del rectángulo
-                for (const [num, notas] of Object.entries(notasVoboData)) {
-                    if (!notas || notas.length === 0) continue;
-                    const pageIndex = parseInt(num) - 1;
-                    if (pageIndex >= pages.length) continue;
-                    const page = pages[pageIndex];
-                    const pageH = page.getHeight();
-
-                    notas.forEach(nota => {
-                        const xN = nota.x / scale;
-                        const yN = pageH - (nota.y / scale);
-                        const wN = nota.width / scale;
-                        const hN = nota.height / scale;
-                        const yBottom = yN - hN;
-
-                        const maxWidth = wN - 4;  // margen interior
-                        const availableHeight = hN - 4;
-
-                        // Función para calcular el número de líneas dado un tamaño de fuente
-                        function getLines(fontSize) {
-                            const words = nota.text.split(' ');
-                            const lines = [];
-                            let currentLine = '';
-                            for (const word of words) {
-                                const testLine = currentLine ? currentLine + ' ' + word : word;
-                                if (fontBold.widthOfTextAtSize(testLine, fontSize) < maxWidth || currentLine === '') {
-                                    currentLine = testLine;
-                                } else {
-                                    lines.push(currentLine);
-                                    currentLine = word;
-                                }
-                            }
-                            if (currentLine) lines.push(currentLine);
-                            return lines;
-                        }
-
-                        // Buscar el mayor tamaño de fuente que haga que el texto quepa en el alto disponible
-                        let fontSize = 12; // máximo inicial
-                        const minFontSize = 4;
-                        let bestFontSize = minFontSize;
-                        let bestLines = [];
-
-                        while (fontSize >= minFontSize) {
-                            const lines = getLines(fontSize);
-                            const lineHeight = fontSize * 1.2;
-                            const totalHeight = lines.length * lineHeight;
-                            if (totalHeight <= availableHeight) {
-                                bestFontSize = fontSize;
-                                bestLines = lines;
-                                break;
-                            }
-                            fontSize -= 0.5;
-                        }
-
-                        // Si incluso con el mínimo no cabe, usar el mínimo y recortar líneas (aunque es muy raro)
-                        if (bestLines.length === 0) {
-                            bestFontSize = minFontSize;
-                            bestLines = getLines(minFontSize);
-                            const lineHeight = bestFontSize * 1.2;
-                            const maxLines = Math.floor(availableHeight / lineHeight);
-                            bestLines = bestLines.slice(0, maxLines);
-                        }
-
-                        const lineHeight = bestFontSize * 1.2;
-                        let yText = yBottom + hN - bestFontSize - 2; // empezar arriba con margen
-                        for (const line of bestLines) {
-                            page.drawText(line, {
-                                x: xN + 2,
-                                y: yText,
-                                size: bestFontSize,
-                                font: fontBold,
-                                color: rgb(0.024, 0.373, 0.275) // #065f46
-                            });
-                            yText -= lineHeight;
-                        }
-                    });
-                }
-
-                if (notasAdicionales) {
-                    const fsN = 11, lh = 16, mg = 50, uw = 595.28 - mg * 2;
-                    const lines = [];
-                    notasAdicionales.split('\n').forEach(p => {
-                        if (!p) { lines.push(''); return; }
-                        const words = p.split(' ');
-                        let line = words[0] || '';
-                        for (let i = 1; i < words.length; i++) {
-                            if (font.widthOfTextAtSize(line + ' ' + words[i], fsN) < uw) {
-                                line += ' ' + words[i];
-                            } else {
-                                lines.push(line);
-                                line = words[i];
-                            }
-                        }
-                        lines.push(line);
-                    });
-                    const makePage = (first) => {
-                        const np = doc.addPage([595.28, 842.89]);
-                        np.drawText(first ? "ANEXO: Notas y Pasos Adicionales" : "ANEXO: Notas (Continuación)", { x: mg, y: np.getHeight() - 80, size: 16, font: fontBold, color: rgb(0.1, 0.2, 0.4) });
-                        np.drawText(`Generado el: ${fecha}`, { x: mg, y: np.getHeight() - 100, size: 10, font: fontBold, color: rgb(0.2, 0.35, 0.6) });
-                        return { page: np, y: np.getHeight() - 140 };
-                    };
-                    let { page: cp, y: cy } = makePage(true);
-                    lines.forEach(line => {
-                        if (cy < 60) { const n = makePage(false); cp = n.page; cy = n.y; }
-                        cp.drawText(line, { x: mg, y: cy, size: fsN, font: font, color: rgb(0, 0, 0) });
-                        cy -= lh;
-                    });
-                }
-
-                if (hayImagen && uploadedImageBytes) {
-                    try {
-                        let image;
-                        if (uploadedImageType === 'image/png') image = await doc.embedPng(uploadedImageBytes);
-                        else if (uploadedImageType === 'image/jpeg' || uploadedImageType === 'image/jpg') image = await doc.embedJpg(uploadedImageBytes);
-                        else { try { image = await doc.embedPng(uploadedImageBytes); } catch { image = await doc.embedJpg(uploadedImageBytes); } }
-                        const imgPage = doc.addPage([595.28, 842.89]);
-                        const dims = image.scaleToFit(500, 700);
-                        imgPage.drawImage(image, { x: (595.28 - dims.width) / 2, y: (842.89 - dims.height) / 2, width: dims.width, height: dims.height });
-                    } catch (imgError) { console.warn("Error al incrustar imagen:", imgError); }
-                }
-
-                const bytes = await doc.save();
+                const bytes = await generarPDFModificado();
                 const blob = new Blob([bytes], { type: 'application/pdf' });
                 const a = document.createElement('a');
                 a.href = URL.createObjectURL(blob);
@@ -1227,8 +1274,37 @@
                 a.click();
                 showNotification('✅ ¡Documento guardado exitosamente!', 'success');
             } catch(e) {
-                console.error("Error detallado:", e);
-                alert("Error al generar el PDF: " + (e.message || "Error desconocido"));
+                console.error(e);
+                alert("Error al generar el PDF: " + e.message);
+            }
+        }
+
+        async function previsualizarPDF() {
+            try {
+                const bytes = await generarPDFModificado();
+                const blob = new Blob([bytes], { type: 'application/pdf' });
+                const url = URL.createObjectURL(blob);
+                previewIframe.src = url;
+                previewModalOverlay.style.display = 'flex';
+
+                // Liberar el objeto URL cuando se cierre o se cambie
+                const cleanUrl = () => {
+                    URL.revokeObjectURL(url);
+                    previewIframe.src = '';
+                };
+                closePreviewBtn.onclick = () => {
+                    previewModalOverlay.style.display = 'none';
+                    cleanUrl();
+                };
+                previewModalOverlay.onclick = (e) => {
+                    if (e.target === previewModalOverlay) {
+                        previewModalOverlay.style.display = 'none';
+                        cleanUrl();
+                    }
+                };
+            } catch(e) {
+                console.error(e);
+                alert("Error al generar la vista previa: " + e.message);
             }
         }
 
