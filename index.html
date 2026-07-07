@@ -11,7 +11,7 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
 
     <style>
-        /* ===== ESTILOS COMPLETOS (sin cambios) ===== */
+        /* ===== ESTILOS COMPLETOS ===== */
         :root {
             --primary: #6366f1;
             --primary-dark: #4f46e5;
@@ -610,7 +610,7 @@
     <script src="https://unpkg.com/pdf-lib@1.17.1/dist/pdf-lib.min.js"></script>
     <script>
         // ============================================================
-        // CÓDIGO PRINCIPAL (Edición de PDF, Undo, Nota V°B°, etc.)
+        // CÓDIGO PRINCIPAL
         // ============================================================
         pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.worker.min.js';
 
@@ -618,7 +618,7 @@
         let canvas = document.getElementById('the-canvas'), ctx = canvas.getContext('2d');
         let textLayer = document.getElementById('text-layer'), annotationsLayer = document.getElementById('annotations-layer');
         let annotationsData = {};
-        let notasVoboData = {}; // { pageNum: [ { id, x, y, width, height, text: "NOTA:..." } ] }
+        let notasVoboData = {};
         let pdfBytesOriginal = null;
         let nombreArchivoOriginal = "documento.pdf";
 
@@ -654,7 +654,6 @@
         const toolbarToggle = document.getElementById('toolbarToggle');
         let isToolbarMinimized = false;
 
-        // Texto fijo para la nota V°B°
         const TEXTO_NOTA_VOBO = "NOTA: EL JEFE O SUPERVISOR DE LA SECCION DEBE VERIFICAR PRESENCIALMENTE LA ACTIVIDAD U OPERACION REALIZADA";
 
         // ========== DRAG & DROP ==========
@@ -747,7 +746,7 @@
                             textLayer.querySelectorAll('span').forEach(span => { span.style.userSelect = 'text'; span.style.webkitUserSelect = 'text'; span.style.cursor = 'text'; });
                         });
                         restaurarAnotaciones(num);
-                        renderNotasVobo(num);  // <-- Dibuja las notas V°B°
+                        renderNotasVobo(num);
                         pageRendering = false;
                         if (pageNumPending !== null) { renderPage(pageNumPending); pageNumPending = null; }
                         resolve();
@@ -761,7 +760,7 @@
         function onPrevPage() { if (pageNum <= 1) return; pageNum--; queueRenderPage(pageNum); }
         function onNextPage() { if (pageNum >= pdfDoc.numPages) return; pageNum++; queueRenderPage(pageNum); }
 
-        // ========== CORRECTIONS (with undo) ==========
+        // ========== CORRECTIONS ==========
         function saveUndoState() {
             undoStack.push({
                 annotations: JSON.parse(JSON.stringify(annotationsData)),
@@ -895,13 +894,9 @@
 
         // ========== NOTA V°B° ==========
         function insertarNotaVobo() {
-            if (!pdfDoc) {
-                alert("Primero carga un PDF.");
-                return;
-            }
+            if (!pdfDoc) { alert("Primero carga un PDF."); return; }
             saveUndoState();
             if (!notasVoboData[pageNum]) notasVoboData[pageNum] = [];
-            // Calcular centro de la página visible
             const viewerWidth = annotationsLayer.clientWidth;
             const viewerHeight = annotationsLayer.clientHeight;
             const defaultWidth = 300;
@@ -922,10 +917,8 @@
         }
 
         function renderNotasVobo(num) {
-            // Eliminar solo los divs de tipo nota-vobo (para no interferir con correcciones)
             const existing = annotationsLayer.querySelectorAll('.nota-vobo');
             existing.forEach(el => el.remove());
-
             if (!notasVoboData[num]) return;
             notasVoboData[num].forEach(nota => {
                 const div = document.createElement('div');
@@ -934,12 +927,13 @@
                 div.style.top = nota.y + 'px';
                 div.style.width = nota.width + 'px';
                 div.style.height = nota.height + 'px';
-                div.style.fontSize = Math.min(14, nota.height * 0.2) + 'px';
+                // Tamaño de fuente dinámico igual que antes
+                const fontSize = Math.min(14, nota.height * 0.2);
+                div.style.fontSize = fontSize + 'px';
                 div.textContent = nota.text;
                 div.setAttribute('data-id', nota.id);
                 div.setAttribute('data-page', num);
 
-                // Botón eliminar
                 const delBtn = document.createElement('button');
                 delBtn.className = 'delete-vobo';
                 delBtn.innerHTML = '<i class="fa-solid fa-xmark"></i>';
@@ -953,14 +947,11 @@
                 };
                 div.appendChild(delBtn);
 
-                // Manejador de redimensionamiento
                 const resizeHandle = document.createElement('div');
                 resizeHandle.className = 'resize-handle';
                 div.appendChild(resizeHandle);
 
-                // Eventos de arrastre y redimensionamiento
                 makeDraggableAndResizable(div, resizeHandle, nota, num);
-
                 annotationsLayer.appendChild(div);
             });
         }
@@ -1007,7 +998,8 @@
                     nota.height = Math.max(40, startHeight + dy);
                     element.style.width = nota.width + 'px';
                     element.style.height = nota.height + 'px';
-                    element.style.fontSize = Math.min(14, nota.height * 0.2) + 'px';
+                    const fontSize = Math.min(14, nota.height * 0.2);
+                    element.style.fontSize = fontSize + 'px';
                 }
             });
 
@@ -1055,11 +1047,7 @@
         confirmAuthorModal.addEventListener('click', (e) => { if (e.target === confirmAuthorModal) confirmAuthorModal.style.display = 'none'; });
 
         async function guardarPDFEnPC() {
-            if (!pdfBytesOriginal) {
-                alert("No hay PDF cargado.");
-                return;
-            }
-
+            if (!pdfBytesOriginal) { alert("No hay PDF cargado."); return; }
             try {
                 const notasAdicionales = txtNotasAdicionales.value.trim();
                 const elaboradoPor = txtElaborado.value.trim();
@@ -1081,7 +1069,6 @@
                 const now = new Date();
                 const fecha = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-${String(now.getDate()).padStart(2,'0')}`;
 
-                // Autor y fecha
                 if (elaboradoPor && pages.length > 0) {
                     const p = pages[0];
                     const h = p.getHeight();
@@ -1092,14 +1079,12 @@
                     p.drawText(fecha, { x: xA, y: yF, size: 12, font: fontBold, color: rgb(0.1, 0.2, 0.4) });
                 }
 
-                // Anotaciones (reemplazos)
                 for (const [num, marcas] of Object.entries(annotationsData)) {
                     if (!marcas || marcas.length === 0) continue;
                     const pageIndex = parseInt(num) - 1;
                     if (pageIndex >= pages.length) continue;
                     const page = pages[pageIndex];
                     const pageH = page.getHeight();
-
                     marcas.forEach(m => {
                         const xR = m.x / scale;
                         const wR = m.width / scale;
@@ -1108,14 +1093,13 @@
                         const yCenter = yTop - (hR / 2);
                         const fs = Math.max(hR * 0.75, 6);
                         const tw = font.widthOfTextAtSize(m.newText, fs);
-
                         page.drawLine({ start: {x: xR, y: yCenter}, end: {x: xR + wR, y: yCenter}, thickness: 1.5, color: rgb(1, 0, 0) });
                         page.drawRectangle({ x: xR - 1, y: yTop - hR, width: tw + 4, height: hR, color: rgb(1, 1, 1), opacity: 0.65 });
                         page.drawText(m.newText, { x: xR, y: yCenter - (fs * 0.25), size: fs, font: font, color: rgb(0, 0.45, 0) });
                     });
                 }
 
-                // Notas V°B° (AHORA GARANTIZA TEXTO COMPLETO)
+                // NOTAS V°B°: tamaño de fuente idéntico al editor
                 for (const [num, notas] of Object.entries(notasVoboData)) {
                     if (!notas || notas.length === 0) continue;
                     const pageIndex = parseInt(num) - 1;
@@ -1129,8 +1113,13 @@
                         const wN = nota.width / scale;
                         const hN = nota.height / scale;
                         const yBottom = yN - hN;
-                        
-                        // Dibujar rectángulo
+
+                        // Tamaño de fuente en pantalla (px) -> convertir a puntos (1px ≈ 0.75pt)
+                        const screenFontSize = Math.min(14, nota.height * 0.2);
+                        const pdfFontSize = screenFontSize * 0.75;
+                        const lineHeight = pdfFontSize * 1.3;
+                        const maxWidth = wN - 4;
+
                         page.drawRectangle({
                             x: xN,
                             y: yBottom,
@@ -1142,16 +1131,12 @@
                             opacity: 0.8
                         });
 
-                        // Tamaño de fuente adaptativo (mín 6pt, máx 12pt)
-                        const fontSize = Math.max(6, Math.min(12, hN * 0.3));
-                        const lineHeight = fontSize * 1.3;
-                        const maxWidth = wN - 4;
                         const words = nota.text.split(' ');
                         const lines = [];
                         let currentLine = '';
                         for (const word of words) {
                             const testLine = currentLine ? currentLine + ' ' + word : word;
-                            if (font.widthOfTextAtSize(testLine, fontSize) < maxWidth || currentLine === '') {
+                            if (font.widthOfTextAtSize(testLine, pdfFontSize) < maxWidth || currentLine === '') {
                                 currentLine = testLine;
                             } else {
                                 lines.push(currentLine);
@@ -1160,13 +1145,12 @@
                         }
                         if (currentLine) lines.push(currentLine);
 
-                        // Dibujar todas las líneas, incluso si exceden el rectángulo
-                        let yText = yBottom + hN - fontSize - 2; // empezar arriba
+                        let yText = yBottom + hN - pdfFontSize - 2;
                         for (const line of lines) {
                             page.drawText(line, {
                                 x: xN + 2,
                                 y: yText,
-                                size: fontSize,
+                                size: pdfFontSize,
                                 font: font,
                                 color: rgb(0.02, 0.46, 0.33)
                             });
@@ -1175,7 +1159,6 @@
                     });
                 }
 
-                // Notas adicionales (sin cambios)
                 if (notasAdicionales) {
                     const fsN = 11, lh = 16, mg = 50, uw = 595.28 - mg * 2;
                     const lines = [];
@@ -1207,23 +1190,16 @@
                     });
                 }
 
-                // Imagen (sin cambios)
                 if (hayImagen && uploadedImageBytes) {
                     try {
                         let image;
-                        if (uploadedImageType === 'image/png') {
-                            image = await doc.embedPng(uploadedImageBytes);
-                        } else if (uploadedImageType === 'image/jpeg' || uploadedImageType === 'image/jpg') {
-                            image = await doc.embedJpg(uploadedImageBytes);
-                        } else {
-                            try { image = await doc.embedPng(uploadedImageBytes); } catch { image = await doc.embedJpg(uploadedImageBytes); }
-                        }
+                        if (uploadedImageType === 'image/png') image = await doc.embedPng(uploadedImageBytes);
+                        else if (uploadedImageType === 'image/jpeg' || uploadedImageType === 'image/jpg') image = await doc.embedJpg(uploadedImageBytes);
+                        else { try { image = await doc.embedPng(uploadedImageBytes); } catch { image = await doc.embedJpg(uploadedImageBytes); } }
                         const imgPage = doc.addPage([595.28, 842.89]);
                         const dims = image.scaleToFit(500, 700);
                         imgPage.drawImage(image, { x: (595.28 - dims.width) / 2, y: (842.89 - dims.height) / 2, width: dims.width, height: dims.height });
-                    } catch (imgError) {
-                        console.warn("Error al incrustar imagen:", imgError);
-                    }
+                    } catch (imgError) { console.warn("Error al incrustar imagen:", imgError); }
                 }
 
                 const bytes = await doc.save();
@@ -1233,7 +1209,6 @@
                 a.download = "BORRADOR_" + nombreArchivoOriginal;
                 a.click();
                 showNotification('✅ ¡Documento guardado exitosamente!', 'success');
-
             } catch(e) {
                 console.error("Error detallado:", e);
                 alert("Error al generar el PDF: " + (e.message || "Error desconocido"));
