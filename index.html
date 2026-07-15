@@ -434,7 +434,6 @@
         .toolbar-tip strong { color: #92400e; font-weight: 700; }
         .toolbar.minimized .toolbar-tip { display: none; }
 
-        /* Indicador de imagen cargada */
         .image-status {
             display: inline-flex;
             align-items: center;
@@ -844,7 +843,6 @@
                         <button class="btn btn-nav" id="next" onclick="onNextPage()"><i class="fa-solid fa-chevron-right"></i></button>
                     </div>
                     <button class="btn btn-replace" onmousedown="event.preventDefault(); aplicarCorreccion()"><i class="fa-solid fa-pen-to-square"></i> Reemplazar</button>
-                    <!-- Orden cambiado: Nota / V°B° antes de Imagen -->
                     <button class="btn btn-vobo" onclick="insertarNotaVobo()" title="Inserta una nota V°B° editable. Haz doble clic sobre la nota para modificar su texto.">
                         <i class="fa-solid fa-stamp"></i> Nota / V°B°
                     </button>
@@ -1093,14 +1091,13 @@
             const textoSeleccionado = selection.toString().trim();
             if (!textoSeleccionado) { alert("No has seleccionado nada."); return; }
             const range = selection.getRangeAt(0);
-            const rects = range.getClientRects(); // obtiene todos los rectángulos (líneas)
+            const rects = range.getClientRects();
             const viewerRect = annotationsLayer.getBoundingClientRect();
 
-            // Convertir cada rect a coordenadas relativas al visor
             const lineRects = [];
             for (let i = 0; i < rects.length; i++) {
                 const r = rects[i];
-                if (r.width === 0 || r.height === 0) continue; // ignorar rect vacío
+                if (r.width === 0 || r.height === 0) continue;
                 lineRects.push({
                     x: r.left - viewerRect.left,
                     y: r.top - viewerRect.top,
@@ -1108,9 +1105,8 @@
                     height: r.height
                 });
             }
-            if (lineRects.length === 0) return; // nada seleccionado
+            if (lineRects.length === 0) return;
 
-            // Calcular el bounding box total
             let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
             lineRects.forEach(r => {
                 if (r.x < minX) minX = r.x;
@@ -1177,7 +1173,6 @@
             const textoNuevo = replacementTextInput.value.trim();
             if (!textoNuevo || !pendingCorrection) { alert("Escribe el texto de reemplazo."); return; }
             if (!annotationsData[pageNum]) annotationsData[pageNum] = [];
-            // Guardar la anotación con la bounding box total y las líneas
             annotationsData[pageNum].push({
                 id: Date.now(),
                 x: pendingCorrection.overall.x,
@@ -1185,7 +1180,7 @@
                 width: pendingCorrection.overall.width,
                 height: pendingCorrection.overall.height,
                 newText: textoNuevo,
-                lines: pendingCorrection.lines // array de {x,y,width,height}
+                lines: pendingCorrection.lines
             });
             restaurarAnotaciones(pageNum);
             hideReplacementModal();
@@ -1211,34 +1206,29 @@
                 div.className = 'correction-mark';
                 div.style.cssText = `left:${marca.x}px;top:${marca.y}px;width:${marca.width}px;height:${marca.height}px;`;
 
-                // Dibujar las líneas de tachado (una por cada línea)
                 if (marca.lines && marca.lines.length > 0) {
                     marca.lines.forEach(line => {
                         const lineDiv = document.createElement('div');
                         lineDiv.className = 'strike-line';
-                        // Posicionar la línea relativa al div contenedor
                         lineDiv.style.position = 'absolute';
                         lineDiv.style.left = (line.x - marca.x) + 'px';
                         lineDiv.style.top = (line.y - marca.y) + 'px';
                         lineDiv.style.width = line.width + 'px';
-                        lineDiv.style.height = '2px'; // grosor fijo
+                        lineDiv.style.height = '2px';
                         div.appendChild(lineDiv);
                     });
                 } else {
-                    // Fallback: una sola línea en toda el área (no debería ocurrir)
                     const singleLine = document.createElement('div');
                     singleLine.className = 'strike-line';
                     div.appendChild(singleLine);
                 }
 
-                // Etiqueta con el nuevo texto
                 const label = document.createElement('div');
                 label.className = 'new-text-label';
                 label.textContent = marca.newText;
                 label.onclick = () => editarAnotacion(marca.id, num);
                 div.appendChild(label);
 
-                // Botón eliminar
                 const delBtn = document.createElement('button');
                 delBtn.className = 'delete-btn';
                 delBtn.innerHTML = '<i class="fa-solid fa-xmark"></i>';
@@ -1411,7 +1401,7 @@
             });
         }
 
-        // ========== IMAGE UPLOAD (con eliminación) ==========
+        // ========== IMAGE UPLOAD ==========
         function handleImageUpload(event) {
             const file = event.target.files[0];
             if (!file || !file.type.startsWith('image/')) return;
@@ -1429,12 +1419,11 @@
             uploadedImageBytes = null;
             uploadedImageType = null;
             imageStatus.style.display = 'none';
-            // Limpiar el input file para permitir recargar la misma imagen si se desea
             document.getElementById('imageUpload').value = '';
             showNotification('Imagen eliminada.', 'info');
         }
 
-        // ========== GENERACIÓN DE PDF (sin cambios) ==========
+        // ========== GENERACIÓN DE PDF (REEMPLAZO CON AJUSTE AUTOMÁTICO) ==========
         async function generarPDFModificado() {
             if (!pdfBytesOriginal) throw new Error("No hay PDF cargado.");
 
@@ -1460,19 +1449,27 @@
                 p.drawText(fecha, { x: xA, y: yF, size: 12, font: fontBold, color: rgb(0.1, 0.2, 0.4) });
             }
 
+            // ----- CORRECCIONES (TEXTO DE REEMPLAZO AJUSTABLE) -----
             for (const [num, marcas] of Object.entries(annotationsData)) {
                 if (!marcas || marcas.length === 0) continue;
                 const pageIndex = parseInt(num) - 1;
                 if (pageIndex >= pages.length) continue;
                 const page = pages[pageIndex];
                 const pageH = page.getHeight();
+
                 marcas.forEach(m => {
-                    // Dibujar cada línea de tachado individual
+                    const xR = m.x / scale;
+                    const wR = m.width / scale;
+                    const hR = m.height / scale;
+                    const yTop = pageH - (m.y / scale);   // borde superior original
+                    const yBottom = yTop - hR;           // borde inferior
+
+                    // Dibujar líneas de tachado
                     if (m.lines && m.lines.length > 0) {
                         m.lines.forEach(line => {
                             const xL = line.x / scale;
-                            const yTop = pageH - (line.y / scale);
-                            const yCenter = yTop - (line.height / 2);
+                            const yLTop = pageH - (line.y / scale);
+                            const yCenter = yLTop - (line.height / 2);
                             page.drawLine({
                                 start: { x: xL, y: yCenter },
                                 end: { x: xL + (line.width / scale), y: yCenter },
@@ -1481,27 +1478,83 @@
                             });
                         });
                     } else {
-                        // Fallback
-                        const xR = m.x / scale;
-                        const wR = m.width / scale;
-                        const hR = m.height / scale;
-                        const yTop = pageH - (m.y / scale);
                         const yCenter = yTop - (hR / 2);
-                        page.drawLine({ start: {x: xR, y: yCenter}, end: {x: xR + wR, y: yCenter}, thickness: 1.5, color: rgb(1, 0, 0) });
+                        page.drawLine({ start: { x: xR, y: yCenter }, end: { x: xR + wR, y: yCenter }, thickness: 1.5, color: rgb(1, 0, 0) });
                     }
-                    // Texto de reemplazo (usando el rectángulo total)
-                    const xR = m.x / scale;
-                    const wR = m.width / scale;
-                    const hR = m.height / scale;
-                    const yTop = pageH - (m.y / scale);
-                    const yCenter = yTop - (hR / 2);
-                    const fs = Math.max(hR * 0.75, 6);
-                    const tw = font.widthOfTextAtSize(m.newText, fs);
-                    page.drawRectangle({ x: xR - 1, y: yTop - hR, width: tw + 4, height: hR, color: rgb(1, 1, 1), opacity: 0.65 });
-                    page.drawText(m.newText, { x: xR, y: yCenter - (fs * 0.25), size: fs, font: font, color: rgb(0, 0.45, 0) });
+
+                    // Texto nuevo: ajustar tamaño y dividir en líneas para que quepa en el rectángulo
+                    const maxWidth = wR - 4;
+                    const availableHeight = hR - 4;
+
+                    function getLines(fontSize) {
+                        const words = m.newText.split(' ');
+                        const lines = [];
+                        let currentLine = '';
+                        for (const word of words) {
+                            const testLine = currentLine ? currentLine + ' ' + word : word;
+                            if (font.widthOfTextAtSize(testLine, fontSize) < maxWidth || currentLine === '') {
+                                currentLine = testLine;
+                            } else {
+                                lines.push(currentLine);
+                                currentLine = word;
+                            }
+                        }
+                        if (currentLine) lines.push(currentLine);
+                        return lines;
+                    }
+
+                    let fontSize = hR * 0.8;   // tamaño inicial razonable
+                    const minFontSize = 4;
+                    let bestFontSize = minFontSize;
+                    let bestLines = [];
+
+                    while (fontSize >= minFontSize) {
+                        const lines = getLines(fontSize);
+                        const lineHeight = fontSize * 1.2;
+                        const totalHeight = lines.length * lineHeight;
+                        if (totalHeight <= availableHeight) {
+                            bestFontSize = fontSize;
+                            bestLines = lines;
+                            break;
+                        }
+                        fontSize -= 0.5;
+                    }
+
+                    if (bestLines.length === 0) {
+                        bestFontSize = minFontSize;
+                        bestLines = getLines(minFontSize);
+                        const lineHeight = bestFontSize * 1.2;
+                        const maxLines = Math.floor(availableHeight / lineHeight);
+                        bestLines = bestLines.slice(0, maxLines);
+                    }
+
+                    // Fondo blanco semitransparente para ocultar el texto original
+                    page.drawRectangle({
+                        x: xR - 1,
+                        y: yBottom,
+                        width: wR + 2,
+                        height: hR,
+                        color: rgb(1, 1, 1),
+                        opacity: 0.65
+                    });
+
+                    // Dibujar las líneas del nuevo texto
+                    const lineHeight = bestFontSize * 1.2;
+                    let yText = yBottom + hR - bestFontSize - 2;  // primera línea pegada al borde superior
+                    for (const line of bestLines) {
+                        page.drawText(line, {
+                            x: xR + 2,
+                            y: yText,
+                            size: bestFontSize,
+                            font: font,
+                            color: rgb(0, 0.45, 0)
+                        });
+                        yText -= lineHeight;
+                    }
                 });
             }
 
+            // ========== NOTAS V°B° (sin cambios) ==========
             for (const [num, notas] of Object.entries(notasVoboData)) {
                 if (!notas || notas.length === 0) continue;
                 const pageIndex = parseInt(num) - 1;
@@ -1576,6 +1629,7 @@
                 });
             }
 
+            // ========== NOTAS ADICIONALES ==========
             if (notasAdicionales) {
                 const fsN = 11, lh = 16, mg = 50, uw = 595.28 - mg * 2;
                 const lines = [];
@@ -1607,6 +1661,7 @@
                 });
             }
 
+            // ========== IMAGEN ADJUNTA ==========
             if (uploadedImageBytes) {
                 try {
                     let image;
