@@ -12,7 +12,7 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
 
     <style>
-        /* ===== LIQUID GLASS UI ===== */
+        /* ===== LIQUID GLASS UI (sin cambios) ===== */
         :root {
             --glass-bg: rgba(255, 255, 255, 0.25);
             --glass-border: rgba(255, 255, 255, 0.4);
@@ -670,7 +670,6 @@
         }
         .delete-btn:hover { background: #dc2626; transform: scale(1.2); }
 
-        /* Nota V°B° (fondo transparente) */
         .nota-vobo {
             position: absolute;
             background: transparent;
@@ -1077,7 +1076,7 @@
         function onPrevPage() { if (pageNum <= 1) return; pageNum--; queueRenderPage(pageNum); }
         function onNextPage() { if (pageNum >= pdfDoc.numPages) return; pageNum++; queueRenderPage(pageNum); }
 
-        // ========== CORRECTIONS (línea por línea) ==========
+        // ========== CORRECTIONS (línea por línea, texto sin saltos) ==========
         function saveUndoState() {
             undoStack.push({
                 annotations: JSON.parse(JSON.stringify(annotationsData)),
@@ -1143,7 +1142,7 @@
             showNotification('Deshecho', 'info');
         }
 
-        // ========== MODAL ==========
+        // ========== MODAL (texto sin saltos de línea) ==========
         function showReplacementModal(textoSeleccionado, correctionData) {
             originalTextDisplay.textContent = textoSeleccionado;
             modalTitle.innerHTML = '<i class="fa-solid fa-pen-to-square"></i> Reemplazar Texto';
@@ -1170,7 +1169,8 @@
 
         function applyReplacementFromModal() {
             saveUndoState();
-            const textoNuevo = replacementTextInput.value.trim();
+            // *** CORRECCIÓN: eliminar saltos de línea ***
+            const textoNuevo = replacementTextInput.value.trim().replace(/\n/g, ' ');
             if (!textoNuevo || !pendingCorrection) { alert("Escribe el texto de reemplazo."); return; }
             if (!annotationsData[pageNum]) annotationsData[pageNum] = [];
             annotationsData[pageNum].push({
@@ -1197,7 +1197,7 @@
         });
         modalOverlay.addEventListener('click', (e) => { if (e.target === modalOverlay) hideReplacementModal(); });
 
-        // ========== RESTORE ANNOTATIONS (con líneas múltiples) ==========
+        // ========== RESTORE ANNOTATIONS ==========
         function restaurarAnotaciones(num) {
             annotationsLayer.innerHTML = '';
             if (!annotationsData[num]) return;
@@ -1258,7 +1258,8 @@
             const origFn = applyReplacementBtn.onclick;
             applyReplacementBtn.onclick = function() {
                 saveUndoState();
-                const txtMod = replacementTextInput.value.trim();
+                // *** CORRECCIÓN: eliminar saltos de línea ***
+                const txtMod = replacementTextInput.value.trim().replace(/\n/g, ' ');
                 if (txtMod) { marca.newText = txtMod; restaurarAnotaciones(num); }
                 hideReplacementModal(); applyReplacementBtn.onclick = origFn;
             };
@@ -1335,6 +1336,7 @@
                     e.stopPropagation();
                     const nuevoTexto = prompt('Editar texto de la nota V°B°:', nota.text);
                     if (nuevoTexto !== null && nuevoTexto.trim() !== '') {
+                        // Nota: la nota V°B° sí permite saltos de línea porque se manejan con split('\n') al dibujar
                         nota.text = nuevoTexto.trim();
                         renderNotasVobo(num);
                     }
@@ -1423,7 +1425,7 @@
             showNotification('Imagen eliminada.', 'info');
         }
 
-        // ========== GENERACIÓN DE PDF (REEMPLAZO CON AJUSTE AUTOMÁTICO) ==========
+        // ========== GENERACIÓN DE PDF (sin saltos en reemplazos) ==========
         async function generarPDFModificado() {
             if (!pdfBytesOriginal) throw new Error("No hay PDF cargado.");
 
@@ -1449,7 +1451,7 @@
                 p.drawText(fecha, { x: xA, y: yF, size: 12, font: fontBold, color: rgb(0.1, 0.2, 0.4) });
             }
 
-            // ----- CORRECCIONES (TEXTO DE REEMPLAZO AJUSTABLE) -----
+            // ----- CORRECCIONES (ajuste automático) -----
             for (const [num, marcas] of Object.entries(annotationsData)) {
                 if (!marcas || marcas.length === 0) continue;
                 const pageIndex = parseInt(num) - 1;
@@ -1461,10 +1463,10 @@
                     const xR = m.x / scale;
                     const wR = m.width / scale;
                     const hR = m.height / scale;
-                    const yTop = pageH - (m.y / scale);   // borde superior original
-                    const yBottom = yTop - hR;           // borde inferior
+                    const yTop = pageH - (m.y / scale);
+                    const yBottom = yTop - hR;
 
-                    // Dibujar líneas de tachado
+                    // Líneas de tachado
                     if (m.lines && m.lines.length > 0) {
                         m.lines.forEach(line => {
                             const xL = line.x / scale;
@@ -1482,7 +1484,7 @@
                         page.drawLine({ start: { x: xR, y: yCenter }, end: { x: xR + wR, y: yCenter }, thickness: 1.5, color: rgb(1, 0, 0) });
                     }
 
-                    // Texto nuevo: ajustar tamaño y dividir en líneas para que quepa en el rectángulo
+                    // Texto nuevo (ya sin \n)
                     const maxWidth = wR - 4;
                     const availableHeight = hR - 4;
 
@@ -1503,7 +1505,7 @@
                         return lines;
                     }
 
-                    let fontSize = hR * 0.8;   // tamaño inicial razonable
+                    let fontSize = hR * 0.8;
                     const minFontSize = 4;
                     let bestFontSize = minFontSize;
                     let bestLines = [];
@@ -1528,7 +1530,6 @@
                         bestLines = bestLines.slice(0, maxLines);
                     }
 
-                    // Fondo blanco semitransparente para ocultar el texto original
                     page.drawRectangle({
                         x: xR - 1,
                         y: yBottom,
@@ -1538,9 +1539,8 @@
                         opacity: 0.65
                     });
 
-                    // Dibujar las líneas del nuevo texto
                     const lineHeight = bestFontSize * 1.2;
-                    let yText = yBottom + hR - bestFontSize - 2;  // primera línea pegada al borde superior
+                    let yText = yBottom + hR - bestFontSize - 2;
                     for (const line of bestLines) {
                         page.drawText(line, {
                             x: xR + 2,
@@ -1554,7 +1554,7 @@
                 });
             }
 
-            // ========== NOTAS V°B° (sin cambios) ==========
+            // ========== NOTAS V°B° ==========
             for (const [num, notas] of Object.entries(notasVoboData)) {
                 if (!notas || notas.length === 0) continue;
                 const pageIndex = parseInt(num) - 1;
@@ -1573,19 +1573,23 @@
                     const availableHeight = hN - 4;
 
                     function getLines(fontSize) {
-                        const words = nota.text.split(' ');
+                        // Para notas V°B° sí se permiten saltos de línea explícitos
+                        const paragraphs = nota.text.split('\n');
                         const lines = [];
-                        let currentLine = '';
-                        for (const word of words) {
-                            const testLine = currentLine ? currentLine + ' ' + word : word;
-                            if (fontBold.widthOfTextAtSize(testLine, fontSize) < maxWidth || currentLine === '') {
-                                currentLine = testLine;
-                            } else {
-                                lines.push(currentLine);
-                                currentLine = word;
+                        paragraphs.forEach(para => {
+                            const words = para.split(' ');
+                            let currentLine = '';
+                            for (const word of words) {
+                                const testLine = currentLine ? currentLine + ' ' + word : word;
+                                if (fontBold.widthOfTextAtSize(testLine, fontSize) < maxWidth || currentLine === '') {
+                                    currentLine = testLine;
+                                } else {
+                                    lines.push(currentLine);
+                                    currentLine = word;
+                                }
                             }
-                        }
-                        if (currentLine) lines.push(currentLine);
+                            if (currentLine) lines.push(currentLine);
+                        });
                         return lines;
                     }
 
