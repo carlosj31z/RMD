@@ -5,410 +5,184 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>EDITAR PDF</title>
 
-    <!-- Fuentes y Font Awesome -->
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600&family=Playfair+Display:wght@400;700;900&display=swap" rel="stylesheet" />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
 
     <style>
-        /* ===== LIQUID GLASS UI ===== */
         :root {
-            --glass-bg: rgba(255, 255, 255, 0.25);
-            --glass-border: rgba(255, 255, 255, 0.4);
-            --glass-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
-            --glass-highlight: inset 0 1px 0 rgba(255, 255, 255, 0.7);
-            --glass-blur: 20px;
-            
-            --primary: #6366f1;
-            --primary-dark: #4f46e5;
-            --secondary: #ec4899;
-            --secondary-dark: #db2777;
-            --success: #10b981;
-            --success-dark: #059669;
-            --danger: #ef4444;
-            --danger-dark: #dc2626;
-            --warning: #f59e0b;
-            --dark: #1e293b;
-            --gray: #475569;
-            --gray-light: #94a3b8;
-            --radius-sm: 12px;
-            --radius: 16px;
-            --radius-lg: 20px;
-            --radius-xl: 24px;
+            --bg-base: #0f0f1a;
+            --bg-elevated: #161b2e;
+            --bg-elevated-2: #1c2340;
+            --border-subtle: rgba(255,255,255,0.08);
+            --border-strong: rgba(255,255,255,0.16);
+            --text-primary: #e8eaf0;
+            --text-secondary: #97a0b8;
+            --text-muted: #6b7390;
+            --accent-blue: #0a6ed1;
+            --accent-blue-dark: #085ba8;
+            --accent-blue-soft: rgba(10,110,209,0.18);
+            --accent-green: #107e3e;
+            --accent-green-dark: #0c6231;
+            --accent-orange: #e9730c;
+            --accent-orange-dark: #c25f09;
+            --accent-amber: #f0ab00;
+            --accent-amber-dark: #c68e00;
+            --accent-red: #bb0000;
+            --accent-red-dark: #950000;
+            --accent-purple: #6b46c1;
+            --accent-purple-dark: #55379b;
+            --radius-sm: 8px;
+            --radius: 12px;
+            --radius-lg: 16px;
             --radius-full: 9999px;
-            --transition: 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+            --transition: 0.18s ease;
+            --shadow-elevated: 0 6px 20px rgba(0,0,0,0.4);
+            --shadow-soft: 0 2px 8px rgba(0,0,0,0.3);
         }
 
         * { box-sizing: border-box; margin: 0; padding: 0; }
+        html { scroll-behavior: smooth; }
 
         body {
-            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
-            background: linear-gradient(135deg, #0f172a 0%, #1e1b4b 30%, #312e81 60%, #4338ca 100%);
-            background-attachment: fixed;
+            font-family: 'Inter', 'Segoe UI', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: radial-gradient(circle at 25% 0%, #182140 0%, var(--bg-base) 55%) fixed;
             min-height: 100vh;
             padding: 16px;
             -webkit-font-smoothing: antialiased;
-            color: #1e293b;
+            color: var(--text-primary);
             position: relative;
-            overflow-x: hidden;
         }
 
-        body::before {
-            content: '';
-            position: fixed;
-            top: -50%;
-            left: -50%;
-            width: 200%;
-            height: 200%;
-            background: 
-                radial-gradient(circle at 20% 50%, rgba(99,102,241,0.4) 0%, transparent 50%),
-                radial-gradient(circle at 80% 20%, rgba(236,72,153,0.3) 0%, transparent 50%),
-                radial-gradient(circle at 40% 80%, rgba(16,185,129,0.25) 0%, transparent 50%),
-                radial-gradient(circle at 70% 60%, rgba(139,92,246,0.35) 0%, transparent 50%);
-            filter: blur(80px);
-            animation: blobMove 20s ease-in-out infinite alternate;
-            z-index: 0;
-            pointer-events: none;
-        }
-        @keyframes blobMove {
-            0% { transform: translate(0, 0) scale(1); }
-            50% { transform: translate(5%, 5%) scale(1.1); }
-            100% { transform: translate(-3%, -3%) scale(0.95); }
+        button:focus-visible, input:focus-visible, textarea:focus-visible, [tabindex]:focus-visible {
+            outline: none;
+            box-shadow: 0 0 0 3px var(--accent-blue-soft);
         }
 
         .drop-overlay {
             display: none;
-            position: fixed;
-            top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(99,102,241,0.15);
-            border: 3px dashed rgba(99,102,241,0.8);
-            backdrop-filter: blur(8px);
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(10,110,209,0.12);
+            border: 2px dashed var(--accent-blue);
             z-index: 100000;
-            justify-content: center;
-            align-items: center;
-            font-size: 2rem;
-            color: #fff;
-            font-weight: 700;
+            justify-content: center; align-items: center;
+            font-size: 1.8rem; color: var(--text-primary); font-weight: 700;
             pointer-events: none;
-            border-radius: 0;
-            text-shadow: 0 2px 10px rgba(0,0,0,0.3);
         }
         .drop-overlay.active { display: flex; }
 
-        /* ========== TOOLBAR – Glass ========== */
-        .toolbar-container {
-            position: sticky;
-            top: 12px;
-            z-index: 100;
-            margin-bottom: 20px;
-            display: flex;
-            justify-content: center;
-            width: 100%;
-        }
-
+        .toolbar-container { position: sticky; top: 12px; z-index: 100; margin-bottom: 20px; display: flex; justify-content: center; width: 100%; }
         .toolbar {
-            background: var(--glass-bg);
-            backdrop-filter: blur(var(--glass-blur));
-            -webkit-backdrop-filter: blur(var(--glass-blur));
-            border-radius: var(--radius-xl);
-            border: 1px solid var(--glass-border);
-            box-shadow: var(--glass-shadow), var(--glass-highlight);
-            text-align: center;
+            background: rgba(22,27,46,0.94);
+            backdrop-filter: blur(14px);
+            -webkit-backdrop-filter: blur(14px);
+            border-radius: var(--radius-lg);
+            border: 1px solid var(--border-subtle);
+            box-shadow: var(--shadow-elevated);
+            width: fit-content; max-width: 95vw;
+            position: relative; color: var(--text-primary);
             transition: all 0.3s ease;
-            width: fit-content;
-            max-width: 95vw;
-            position: relative;
-            color: #1e293b;
         }
-
-        .toolbar::after {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 5%;
-            right: 5%;
-            height: 1px;
-            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.8), transparent);
-            pointer-events: none;
-        }
-
-        .toolbar.maximized { padding: 18px 24px 16px; }
-        .toolbar.minimized {
-            padding: 6px 12px;
-            border-radius: var(--radius-full);
-        }
+        .toolbar.maximized { padding: 16px 22px 14px; }
+        .toolbar.minimized { padding: 6px 12px; border-radius: var(--radius-full); }
 
         .toolbar-toggle {
-            position: absolute;
-            top: 6px; right: 10px;
-            background: rgba(255,255,255,0.3);
-            backdrop-filter: blur(10px);
-            border: 1px solid rgba(255,255,255,0.5);
-            color: #1e293b;
-            width: 28px; height: 28px;
-            border-radius: 50%;
-            cursor: pointer;
-            font-size: 12px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
+            position: absolute; top: 6px; right: 10px;
+            background: var(--bg-elevated-2);
+            border: 1px solid var(--border-subtle);
+            color: var(--text-secondary);
+            width: 26px; height: 26px; border-radius: 50%;
+            cursor: pointer; font-size: 11px;
+            display: flex; align-items: center; justify-content: center;
             transition: all var(--transition);
-            z-index: 10;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.1), inset 0 1px 0 rgba(255,255,255,0.7);
         }
-        .toolbar-toggle:hover {
-            background: rgba(255,255,255,0.5);
-            transform: rotate(180deg);
-        }
+        .toolbar-toggle:hover { background: var(--accent-blue); color: #fff; border-color: var(--accent-blue); }
         .toolbar.minimized .toolbar-toggle { display: none; }
 
-        .toolbar-content {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            gap: 12px;
-        }
-        .toolbar.minimized .toolbar-content {
-            flex-direction: row;
-            align-items: center;
-            gap: 6px;
-            flex-wrap: nowrap;
-            justify-content: center;
-        }
-
-        .toolbar-row {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 10px;
-            flex-wrap: wrap;
-            width: 100%;
-        }
-        .toolbar.minimized .toolbar-row {
-            flex-wrap: nowrap;
-            gap: 4px;
-            width: auto;
-        }
-
+        .toolbar-content { display: flex; flex-direction: column; align-items: center; gap: 10px; }
+        .toolbar.minimized .toolbar-content { flex-direction: row; align-items: center; gap: 6px; flex-wrap: nowrap; justify-content: center; }
+        .toolbar-row { display: flex; align-items: center; justify-content: center; gap: 8px; flex-wrap: wrap; width: 100%; }
+        .toolbar.minimized .toolbar-row { flex-wrap: nowrap; gap: 4px; width: auto; }
         .upload-section { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; justify-content: center; }
 
         .custom-file-upload {
-            display: inline-flex;
-            align-items: center;
-            gap: 6px;
-            padding: 8px 18px;
-            cursor: pointer;
-            background: rgba(99,102,241,0.85);
-            backdrop-filter: blur(10px);
-            border: 1px solid rgba(255,255,255,0.5);
-            color: white;
-            font-size: 12px;
-            font-weight: 600;
-            border-radius: var(--radius-full);
-            box-shadow: 0 4px 15px rgba(99,102,241,0.4), inset 0 1px 0 rgba(255,255,255,0.4);
+            display: inline-flex; align-items: center; gap: 6px;
+            padding: 8px 16px; cursor: pointer;
+            background: var(--accent-blue);
+            border: 1px solid var(--accent-blue-dark);
+            color: white; font-size: 12px; font-weight: 600;
+            border-radius: var(--radius-sm);
             transition: all var(--transition);
             white-space: nowrap;
         }
-        .custom-file-upload:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 8px 20px rgba(99,102,241,0.5), inset 0 1px 0 rgba(255,255,255,0.6);
-        }
+        .custom-file-upload:hover { background: var(--accent-blue-dark); }
         #upload { display: none; }
 
         .file-name {
-            font-size: 10px; color: #1e293b; font-weight: 500;
-            background: rgba(255,255,255,0.5); backdrop-filter: blur(10px);
-            padding: 4px 12px; border-radius: var(--radius-full);
+            font-size: 10px; color: var(--text-secondary); font-weight: 500;
+            background: var(--bg-elevated-2);
+            padding: 4px 12px; border-radius: var(--radius-sm);
             white-space: nowrap; max-width: 150px; overflow: hidden; text-overflow: ellipsis;
-            border: 1px solid rgba(255,255,255,0.6);
+            border: 1px solid var(--border-subtle);
         }
         .toolbar.minimized .file-name { display: none; }
 
         .author-container {
             display: inline-flex; align-items: center; gap: 6px;
-            padding: 6px 12px; background: rgba(255,255,255,0.5);
-            backdrop-filter: blur(10px);
-            border-radius: var(--radius-full);
-            border: 1px solid rgba(255,255,255,0.6);
+            padding: 6px 12px; background: var(--bg-elevated-2);
+            border-radius: var(--radius-sm);
+            border: 1px solid var(--border-subtle);
             transition: all var(--transition); position: relative;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
         }
-        .author-container.highlight {
-            border-color: #ef4444;
-            box-shadow: 0 0 0 4px rgba(239,68,68,0.2);
-            animation: pulseHighlight 0.6s ease-in-out 3;
+        .author-container.highlight { border-color: var(--accent-red); box-shadow: 0 0 0 3px rgba(187,0,0,0.25); }
+        .author-container label { color: var(--text-secondary); font-size: 11px; font-weight: 600; white-space: nowrap; display: flex; align-items: center; gap: 4px; }
+        .author-container input { border: none; outline: none; font-size: 11px; width: 100px; color: var(--text-primary); background: transparent; font-family: 'Inter', sans-serif; font-weight: 500; }
+        .author-container input::placeholder { color: var(--text-muted); font-style: italic; }
+        .author-container:focus-within { border-color: var(--accent-blue); }
+        .author-required-indicator {
+            display: none; color: #ffb3b3; font-size: 9px; font-weight: 600;
+            position: absolute; bottom: -18px; left: 50%; transform: translateX(-50%);
+            white-space: nowrap; background: var(--accent-red); padding: 2px 8px; border-radius: var(--radius-full);
         }
-        @keyframes pulseHighlight {
-            0%,100% { box-shadow: 0 0 0 4px rgba(239,68,68,0.2); }
-            50% { box-shadow: 0 0 0 12px rgba(239,68,68,0.05); }
-        }
-        .author-container label { color: #1e293b; font-size: 11px; font-weight: 600; white-space: nowrap; display: flex; align-items: center; gap: 4px; }
-        .author-container input { border: none; outline: none; font-size: 11px; width: 100px; color: #0f172a; background: transparent; font-family: 'Inter', sans-serif; font-weight: 500; }
-        .author-container input::placeholder { color: #94a3b8; font-style: italic; }
-        .author-container:focus-within { border-color: #6366f1; box-shadow: 0 0 0 3px rgba(99,102,241,0.2); }
-        .author-required-indicator { display: none; color: #ef4444; font-size: 9px; font-weight: 600; position: absolute; bottom: -18px; left: 50%; transform: translateX(-50%); white-space: nowrap; background: white; padding: 2px 8px; border-radius: var(--radius-full); box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
         .author-container.highlight .author-required-indicator { display: block; }
 
         .page-controls {
             display: inline-flex; align-items: center; gap: 10px;
-            background: rgba(255,255,255,0.5); backdrop-filter: blur(10px);
-            padding: 6px 16px;
-            border-radius: var(--radius-full);
-            border: 1px solid rgba(255,255,255,0.6);
-            font-weight: 500;
+            background: var(--bg-elevated-2);
+            padding: 6px 14px; border-radius: var(--radius-sm);
+            border: 1px solid var(--border-subtle); font-weight: 500;
         }
-        .page-controls span { font-size: 12px; color: #1e293b; font-weight: 600; min-width: 60px; text-align: center; font-family: 'JetBrains Mono', monospace; }
-        .page-controls .page-indicator { color: #6366f1; font-weight: 700; }
+        .page-controls span { font-size: 12px; color: var(--text-primary); font-weight: 600; min-width: 56px; text-align: center; font-family: 'JetBrains Mono', monospace; }
+        .page-controls .page-indicator { color: var(--accent-blue); font-weight: 700; }
 
         .btn {
-            padding: 7px 14px;
-            border: 1px solid rgba(255,255,255,0.5);
-            border-radius: var(--radius-full);
-            font-weight: 600;
-            cursor: pointer;
-            transition: all var(--transition);
-            font-size: 12px;
-            letter-spacing: 0.3px;
-            white-space: nowrap;
+            padding: 8px 14px;
+            border: 1px solid var(--border-strong);
+            border-radius: var(--radius-sm);
+            font-weight: 600; cursor: pointer;
+            transition: background var(--transition), border-color var(--transition), transform 0.1s ease;
+            font-size: 12px; letter-spacing: 0.2px; white-space: nowrap;
             font-family: 'Inter', sans-serif;
-            display: inline-flex;
-            align-items: center;
-            gap: 5px;
-            backdrop-filter: blur(10px);
-            position: relative;
-            overflow: hidden;
-            color: #1e293b;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.1), inset 0 1px 0 rgba(255,255,255,0.6);
-            background: rgba(255,255,255,0.5);
+            display: inline-flex; align-items: center; gap: 6px;
+            color: var(--text-primary);
+            background: var(--bg-elevated-2);
         }
-        .btn::after {
-            content: '';
-            position: absolute;
-            top: 0; left: 0; right: 0; height: 40%;
-            background: linear-gradient(to bottom, rgba(255,255,255,0.7), transparent);
-            pointer-events: none;
-            border-radius: var(--radius-full) var(--radius-full) 0 0;
-        }
-        .btn:active {
-            transform: translateY(2px);
-            box-shadow: 0 2px 6px rgba(0,0,0,0.15), inset 0 1px 0 rgba(255,255,255,0.4);
-        }
-        .btn-nav {
-            background: rgba(255,255,255,0.6);
-            padding: 7px 12px;
-            font-size: 13px;
-            min-width: 34px;
-            justify-content: center;
-        }
-        .btn-nav:hover {
-            background: rgba(99,102,241,0.8);
-            color: white;
-            border-color: rgba(99,102,241,0.9);
-            box-shadow: 0 6px 20px rgba(99,102,241,0.5), inset 0 1px 0 rgba(255,255,255,0.5);
-            transform: translateY(-2px);
-        }
-        .btn-replace {
-            background: rgba(236,72,153,0.8);
-            color: white;
-            border-color: rgba(236,72,153,0.9);
-            box-shadow: 0 4px 15px rgba(236,72,153,0.4), inset 0 1px 0 rgba(255,255,255,0.4);
-        }
-        .btn-replace:hover {
-            background: rgba(236,72,153,0.95);
-            box-shadow: 0 8px 20px rgba(236,72,153,0.5), inset 0 1px 0 rgba(255,255,255,0.5);
-            transform: translateY(-2px);
-        }
-        .btn-save {
-            background: rgba(16,185,129,0.8);
-            color: white;
-            border-color: rgba(16,185,129,0.9);
-            box-shadow: 0 4px 15px rgba(16,185,129,0.4), inset 0 1px 0 rgba(255,255,255,0.4);
-            font-weight: 700;
-            padding: 9px 20px;
-        }
-        .btn-save:hover {
-            background: rgba(16,185,129,0.95);
-            box-shadow: 0 8px 20px rgba(16,185,129,0.5), inset 0 1px 0 rgba(255,255,255,0.5);
-            transform: translateY(-2px);
-        }
-        .btn-image {
-            background: rgba(139,92,246,0.8);
-            color: white;
-            border-color: rgba(139,92,246,0.9);
-            box-shadow: 0 4px 15px rgba(139,92,246,0.4), inset 0 1px 0 rgba(255,255,255,0.4);
-        }
-        .btn-image:hover {
-            background: rgba(139,92,246,0.95);
-            box-shadow: 0 8px 20px rgba(139,92,246,0.5), inset 0 1px 0 rgba(255,255,255,0.5);
-            transform: translateY(-2px);
-        }
-        .btn-vobo {
-            background: rgba(16,185,129,0.8);
-            color: white;
-            border-color: rgba(16,185,129,0.9);
-            box-shadow: 0 4px 15px rgba(16,185,129,0.4), inset 0 1px 0 rgba(255,255,255,0.4);
-        }
-        .btn-vobo:hover {
-            background: rgba(16,185,129,0.95);
-            box-shadow: 0 8px 20px rgba(16,185,129,0.5), inset 0 1px 0 rgba(255,255,255,0.5);
-            transform: translateY(-2px);
-        }
-        .btn-preview {
-            background: rgba(167,139,250,0.8);
-            color: white;
-            border-color: rgba(167,139,250,0.9);
-            box-shadow: 0 4px 15px rgba(167,139,250,0.4), inset 0 1px 0 rgba(255,255,255,0.4);
-            font-weight: 600;
-            padding: 9px 16px;
-            white-space: nowrap;
-        }
-        .btn-preview:hover {
-            background: rgba(167,139,250,0.95);
-            box-shadow: 0 8px 20px rgba(167,139,250,0.5), inset 0 1px 0 rgba(255,255,255,0.5);
-            transform: translateY(-2px);
-        }
-        .btn-preview .btn-text { display: inline; }
-        .btn-cancel {
-            background: rgba(255,255,255,0.6);
-            border: 1px solid rgba(255,255,255,0.7);
-            color: #1e293b;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.1), inset 0 1px 0 rgba(255,255,255,0.6);
-        }
-        .btn-cancel:hover {
-            background: rgba(255,255,255,0.8);
-        }
-        .btn-apply {
-            background: rgba(99,102,241,0.8);
-            color: white;
-            border-color: rgba(99,102,241,0.9);
-            box-shadow: 0 4px 15px rgba(99,102,241,0.4), inset 0 1px 0 rgba(255,255,255,0.4);
-        }
-        .btn-apply:hover {
-            background: rgba(99,102,241,0.95);
-            box-shadow: 0 8px 20px rgba(99,102,241,0.5), inset 0 1px 0 rgba(255,255,255,0.5);
-            transform: translateY(-2px);
-        }
-        .btn-continue {
-            background: rgba(245,158,11,0.8);
-            color: white;
-            border-color: rgba(245,158,11,0.9);
-            box-shadow: 0 4px 15px rgba(245,158,11,0.4), inset 0 1px 0 rgba(255,255,255,0.4);
-        }
-        .btn-continue:hover {
-            background: rgba(245,158,11,0.95);
-            box-shadow: 0 8px 20px rgba(245,158,11,0.5), inset 0 1px 0 rgba(255,255,255,0.5);
-        }
-        .btn-fill-author {
-            background: rgba(99,102,241,0.8);
-            color: white;
-            border-color: rgba(99,102,241,0.9);
-            box-shadow: 0 4px 15px rgba(99,102,241,0.4), inset 0 1px 0 rgba(255,255,255,0.4);
-        }
-        .btn-fill-author:hover {
-            background: rgba(99,102,241,0.95);
-            box-shadow: 0 8px 20px rgba(99,102,241,0.5), inset 0 1px 0 rgba(255,255,255,0.5);
-        }
+        .btn:hover { filter: brightness(1.15); }
+        .btn:active { transform: scale(0.97); }
+        .btn-nav { background: var(--bg-elevated-2); padding: 7px 12px; font-size: 13px; min-width: 32px; justify-content: center; }
+        .btn-nav:hover { background: var(--accent-blue); border-color: var(--accent-blue-dark); }
+        .btn-replace { background: var(--accent-orange); color: #fff; border-color: var(--accent-orange-dark); }
+        .btn-highlight { background: var(--accent-amber); color: #1a1300; border-color: var(--accent-amber-dark); }
+        .btn-nota { background: var(--accent-blue); color: #fff; border-color: var(--accent-blue-dark); }
+        .btn-vobo { background: var(--accent-green); color: #fff; border-color: var(--accent-green-dark); }
+        .btn-image { background: var(--accent-purple); color: #fff; border-color: var(--accent-purple-dark); }
+        .btn-save { background: var(--accent-blue-dark); color: #fff; border-color: #063f78; font-weight: 700; padding: 9px 20px; }
+        .btn-preview { background: var(--bg-elevated-2); color: var(--text-primary); border: 1px solid var(--border-strong); font-weight: 600; padding: 9px 16px; }
+        .btn-cancel { background: var(--bg-elevated-2); border: 1px solid var(--border-strong); color: var(--text-primary); }
+        .btn-apply { background: var(--accent-blue); color: #fff; border-color: var(--accent-blue-dark); }
+        .btn-continue { background: var(--accent-amber); color: #1a1300; border-color: var(--accent-amber-dark); }
+        .btn-fill-author { background: var(--accent-blue); color: #fff; border-color: var(--accent-blue-dark); }
 
         .toolbar.minimized .btn-preview .btn-text { display: none; }
         .toolbar.minimized .btn-preview { padding: 5px 10px; font-size: 10px; gap: 3px; }
@@ -416,405 +190,307 @@
         .toolbar.minimized .btn-nav { padding: 5px 8px; font-size: 11px; }
 
         .toolbar-tip {
-            font-size: 10px;
-            background: rgba(254,243,199,0.8);
-            backdrop-filter: blur(10px);
-            border: 1px solid rgba(252,211,77,0.6);
-            padding: 5px 12px;
-            border-radius: var(--radius-full);
-            display: inline-flex;
-            align-items: center;
-            gap: 4px;
-            font-weight: 500;
-            margin: 0 auto;
-            color: #92400e;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+            font-size: 10px; background: var(--bg-elevated-2);
+            border: 1px solid var(--border-subtle);
+            padding: 5px 12px; border-radius: var(--radius-full);
+            display: inline-flex; align-items: center; gap: 4px; font-weight: 500;
+            margin: 0 auto; color: var(--text-secondary);
         }
-        .toolbar-tip i { color: #f59e0b; font-size: 11px; }
-        .toolbar-tip strong { color: #92400e; font-weight: 700; }
+        .toolbar-tip i { color: var(--accent-amber); font-size: 11px; }
+        .toolbar-tip strong { color: var(--text-primary); font-weight: 700; }
         .toolbar.minimized .toolbar-tip { display: none; }
 
-        .image-status {
-            display: inline-flex;
-            align-items: center;
-            gap: 6px;
-            background: rgba(139,92,246,0.2);
-            backdrop-filter: blur(6px);
-            padding: 4px 10px;
-            border-radius: var(--radius-full);
-            font-size: 11px;
-            color: #4c1d95;
-            font-weight: 600;
-            border: 1px solid rgba(139,92,246,0.4);
-        }
-        .image-status i {
-            cursor: pointer;
-            color: #ef4444;
-            font-size: 12px;
-            transition: transform 0.2s;
-        }
-        .image-status i:hover { transform: scale(1.3); }
-
-        /* ========== MODALS – Glass ========== */
         .modal-overlay {
             display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(15,23,42,0.6); backdrop-filter: blur(12px);
+            background: rgba(5,7,15,0.72); backdrop-filter: blur(6px);
             z-index: 10000; justify-content: center; align-items: center;
-            animation: fadeIn 0.25s ease;
+            animation: fadeIn 0.2s ease;
         }
         @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
         @keyframes scaleIn { from { transform: scale(0.95); opacity: 0; } to { transform: scale(1); opacity: 1; } }
         .modal-content {
-            background: rgba(255,255,255,0.3);
-            backdrop-filter: blur(25px);
-            border-radius: var(--radius-xl);
-            width: 90%;
-            max-width: 520px;
-            box-shadow: 0 20px 40px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.6);
-            animation: scaleIn 0.35s ease;
-            overflow: hidden;
-            border: 1px solid rgba(255,255,255,0.5);
-            color: #1e293b;
+            background: var(--bg-elevated);
+            border-radius: var(--radius-lg);
+            width: 90%; max-width: 520px;
+            box-shadow: var(--shadow-elevated);
+            animation: scaleIn 0.2s ease;
+            overflow: hidden; border: 1px solid var(--border-subtle); color: var(--text-primary);
         }
         .modal-header {
-            background: rgba(99,102,241,0.7);
-            backdrop-filter: blur(10px);
-            color: white;
-            padding: 18px 24px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            border-bottom: 1px solid rgba(255,255,255,0.3);
+            background: var(--bg-elevated-2); color: var(--text-primary);
+            padding: 16px 22px; display: flex; justify-content: space-between; align-items: center;
+            border-bottom: 1px solid var(--border-subtle);
         }
-        .modal-header h3 {
-            font-size: 17px; font-weight: 700;
-            display: flex; align-items: center; gap: 8px;
-        }
+        .modal-header h3 { font-size: 16px; font-weight: 700; display: flex; align-items: center; gap: 8px; }
         .close-modal {
-            background: rgba(255,255,255,0.25);
-            border: none; color: white; font-size: 18px;
-            cursor: pointer; width: 32px; height: 32px; border-radius: 50%;
-            display: flex; align-items: center; justify-content: center;
-            transition: all var(--transition);
-            box-shadow: inset 0 1px 0 rgba(255,255,255,0.5);
+            background: rgba(255,255,255,0.06); border: none; color: var(--text-primary); font-size: 16px;
+            cursor: pointer; width: 30px; height: 30px; border-radius: 50%;
+            display: flex; align-items: center; justify-content: center; transition: all var(--transition);
         }
-        .close-modal:hover { background: rgba(255,255,255,0.4); transform: rotate(90deg); }
-        .modal-body { padding: 24px; }
-        .text-comparison { display: flex; flex-direction: column; gap: 16px; margin-bottom: 16px; }
-        .text-box {
-            background: rgba(255,255,255,0.5);
-            backdrop-filter: blur(10px);
-            border-radius: var(--radius);
-            padding: 16px;
-            border: 1px solid rgba(255,255,255,0.6);
-        }
-        .text-box.original { border-left: 4px solid #ef4444; }
-        .text-box.replacement { border-left: 4px solid #10b981; background: rgba(240,253,244,0.5); }
+        .close-modal:hover { background: var(--accent-red); }
+        .modal-body { padding: 22px; }
+        .text-comparison { display: flex; flex-direction: column; gap: 14px; margin-bottom: 14px; }
+        .text-box { background: var(--bg-elevated-2); border-radius: var(--radius); padding: 14px; border: 1px solid var(--border-subtle); }
+        .text-box.original { border-left: 3px solid var(--accent-red); }
+        .text-box.replacement { border-left: 3px solid var(--accent-green); }
         .text-box label { display: block; font-weight: 700; margin-bottom: 6px; font-size: 11px; text-transform: uppercase; letter-spacing: 1px; }
-        .text-box.original label { color: #dc2626; }
-        .text-box.replacement label { color: #059669; }
+        .text-box.original label { color: #ff8a8a; }
+        .text-box.replacement label { color: #5dbe8a; }
         .text-display {
-            font-size: 14px; color: #1e293b; word-break: break-word; line-height: 1.4;
-            padding: 8px 12px; background: rgba(255,255,255,0.8); border-radius: var(--radius-sm);
-            border: 1px solid rgba(255,255,255,0.7); min-height: 36px; font-weight: 500;
+            font-size: 14px; color: var(--text-primary); word-break: break-word; line-height: 1.4;
+            padding: 8px 12px; background: rgba(0,0,0,0.2); border-radius: var(--radius-sm);
+            border: 1px solid var(--border-subtle); min-height: 36px; font-weight: 500;
         }
         .text-box.original .text-display {
-            text-decoration: line-through; text-decoration-color: #ef4444;
-            text-decoration-thickness: 2px; color: #64748b;
+            text-decoration: line-through; text-decoration-color: var(--accent-red);
+            text-decoration-thickness: 2px; color: var(--text-muted);
         }
         .replacement-input {
-            width: 100%;
-            padding: 10px 14px;
-            border: 1px solid rgba(255,255,255,0.7);
-            border-radius: var(--radius-sm);
-            font-size: 14px;
-            font-family: 'Inter', sans-serif;
-            transition: all var(--transition);
-            background: rgba(255,255,255,0.8);
-            font-weight: 500;
-            resize: vertical;
-            min-height: 80px;
-            line-height: 1.5;
-            backdrop-filter: blur(10px);
+            width: 100%; padding: 10px 14px; border: 1px solid var(--border-subtle); border-radius: var(--radius-sm);
+            font-size: 14px; font-family: 'Inter', sans-serif; transition: all var(--transition);
+            background: rgba(0,0,0,0.2); color: #5dbe8a; font-weight: 500; resize: vertical;
+            min-height: 80px; line-height: 1.5;
         }
-        .replacement-input:focus {
-            outline: none;
-            border-color: #6366f1;
-            box-shadow: 0 0 0 4px rgba(99,102,241,0.15);
-        }
-        .modal-footer {
-            display: flex; gap: 8px; justify-content: flex-end;
-            padding: 16px 24px;
-            background: rgba(255,255,255,0.2);
-            backdrop-filter: blur(10px);
-            border-top: 1px solid rgba(255,255,255,0.3);
-            flex-wrap: wrap;
-        }
+        .replacement-input:focus { outline: none; border-color: var(--accent-green); box-shadow: 0 0 0 3px rgba(16,126,62,0.18); }
+        .modal-footer { display: flex; gap: 8px; justify-content: flex-end; padding: 14px 22px; background: rgba(0,0,0,0.15); border-top: 1px solid var(--border-subtle); flex-wrap: wrap; }
 
         .confirm-modal-overlay {
             display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(15,23,42,0.7); backdrop-filter: blur(12px);
-            z-index: 10001; justify-content: center; align-items: center;
-            animation: fadeIn 0.25s ease;
+            background: rgba(5,7,15,0.75); z-index: 10001; justify-content: center; align-items: center;
+            animation: fadeIn 0.2s ease;
         }
         .confirm-modal {
-            background: rgba(255,255,255,0.35);
-            backdrop-filter: blur(25px);
-            border-radius: var(--radius-xl);
-            padding: 28px;
-            width: 90%;
-            max-width: 400px;
-            box-shadow: 0 20px 40px rgba(0,0,0,0.25), inset 0 1px 0 rgba(255,255,255,0.6);
-            animation: scaleIn 0.35s ease;
-            text-align: center;
-            border: 1px solid rgba(255,255,255,0.5);
+            background: var(--bg-elevated); border-radius: var(--radius-lg); padding: 26px; width: 90%; max-width: 400px;
+            box-shadow: var(--shadow-elevated); animation: scaleIn 0.2s ease; text-align: center; border: 1px solid var(--border-subtle);
         }
-        .confirm-modal .warning-icon { font-size: 48px; margin-bottom: 12px; animation: pulse 2s infinite; }
-        @keyframes pulse { 0%,100%{transform:scale(1)} 50%{transform:scale(1.1)} }
-        .confirm-modal h3 { color: #1e293b; margin-bottom: 8px; font-size: 18px; font-weight: 700; }
-        .confirm-modal p { color: #334155; margin-bottom: 20px; line-height: 1.5; font-size: 13px; }
+        .confirm-modal .warning-icon { font-size: 42px; margin-bottom: 10px; }
+        .confirm-modal h3 { color: var(--text-primary); margin-bottom: 8px; font-size: 17px; font-weight: 700; }
+        .confirm-modal p { color: var(--text-secondary); margin-bottom: 18px; line-height: 1.5; font-size: 13px; }
         .confirm-modal .btn-group { display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; }
 
-        /* ========== PREVIEW MODAL ========== */
         .preview-modal-overlay {
             display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(15,23,42,0.7); backdrop-filter: blur(12px);
-            z-index: 10002; justify-content: center; align-items: center;
-            animation: fadeIn 0.3s ease;
+            background: rgba(5,7,15,0.75); z-index: 10002; justify-content: center; align-items: center;
+            animation: fadeIn 0.2s ease;
         }
         .preview-modal {
-            background: rgba(255,255,255,0.3);
-            backdrop-filter: blur(25px);
-            border-radius: var(--radius-xl);
-            width: 95%; height: 90%;
-            max-width: 1100px;
-            box-shadow: 0 25px 50px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.5);
-            display: flex; flex-direction: column;
-            animation: scaleIn 0.35s ease; overflow: hidden;
-            border: 1px solid rgba(255,255,255,0.5);
+            background: var(--bg-elevated); border-radius: var(--radius-lg); width: 95%; height: 90%; max-width: 1100px;
+            box-shadow: var(--shadow-elevated); display: flex; flex-direction: column;
+            animation: scaleIn 0.2s ease; overflow: hidden; border: 1px solid var(--border-subtle);
         }
         .preview-header {
-            background: rgba(167,139,250,0.7);
-            backdrop-filter: blur(10px);
-            color: white;
-            padding: 12px 20px;
-            display: flex; justify-content: space-between; align-items: center;
-            font-weight: 600; font-size: 16px;
+            background: var(--bg-elevated-2); color: var(--text-primary); padding: 12px 20px;
+            display: flex; justify-content: space-between; align-items: center; font-weight: 600; font-size: 15px;
+            border-bottom: 1px solid var(--border-subtle);
         }
         .preview-close {
-            background: rgba(255,255,255,0.25);
-            border: none; color: white; font-size: 18px;
-            cursor: pointer; width: 32px; height: 32px; border-radius: 50%;
-            display: flex; align-items: center; justify-content: center;
-            transition: all var(--transition);
-            box-shadow: inset 0 1px 0 rgba(255,255,255,0.5);
+            background: rgba(255,255,255,0.06); border: none; color: var(--text-primary); font-size: 16px;
+            cursor: pointer; width: 30px; height: 30px; border-radius: 50%;
+            display: flex; align-items: center; justify-content: center; transition: all var(--transition);
         }
-        .preview-close:hover { background: rgba(255,255,255,0.4); transform: rotate(90deg); }
-        .preview-iframe {
-            flex: 1; width: 100%; border: none;
-            border-radius: 0 0 var(--radius-xl) var(--radius-xl);
-        }
+        .preview-close:hover { background: var(--accent-red); }
+        .preview-iframe { flex: 1; width: 100%; border: none; }
 
-        /* ========== PDF CONTAINER ========== */
         .pdf-wrapper { display: flex; justify-content: center; margin-top: 8px; position: relative; z-index: 1; }
         .pdf-inner-container { position: relative; display: inline-block; }
         #pdf-viewer {
-            position: relative;
-            box-shadow: 0 20px 40px rgba(0,0,0,0.3), 0 0 0 1px rgba(255,255,255,0.3);
-            background: white;
-            display: inline-block;
-            border-radius: 12px;
-            overflow: hidden;
-            border: 4px solid white;
+            position: relative; box-shadow: 0 20px 45px rgba(0,0,0,0.5);
+            background: white; display: inline-block; border-radius: 8px; overflow: hidden;
+            border: 3px solid #232842;
         }
         #the-canvas { display: block; }
 
         #text-layer { position: absolute; left: 0; top: 0; right: 0; bottom: 0; overflow: hidden; opacity: 0.45; line-height: 1; z-index: 2; }
         #text-layer > span { color: transparent; position: absolute; white-space: pre; cursor: text; transform-origin: 0% 0%; user-select: text; -webkit-user-select: text; }
-        #text-layer ::selection { background: rgba(99,102,241,0.55) !important; color: rgba(0,0,0,0.08) !important; border-radius: 3px; }
+        #text-layer ::selection { background: rgba(10,110,209,0.5) !important; color: rgba(0,0,0,0.08) !important; border-radius: 3px; }
 
         #annotations-layer { position: absolute; left: 0; top: 0; right: 0; bottom: 0; pointer-events: none; z-index: 3; }
+
+        .highlight-mark { position: absolute; z-index: 3; pointer-events: auto; }
+        .highlight-rect { position: absolute; background: rgba(255, 0, 0, 0.42); border-radius: 2px; pointer-events: none; }
+        .highlight-mark .highlight-delete-btn { opacity: 0.5; transition: opacity .15s ease; }
+        .highlight-mark:hover .highlight-delete-btn { opacity: 1; }
+
         .correction-mark { position: absolute; pointer-events: auto; z-index: 4; }
-        .strike-line { width: 100%; height: 2px; background: #ef4444; position: absolute; top: 50%; transform: translateY(-50%); box-shadow: 0 0 6px rgba(239,68,68,0.4); z-index: 1; border-radius: 1px; }
-        .new-text-label {
-            color: #065f46;
-            font-weight: 700;
-            font-size: 12px;
-            position: absolute;
-            top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(255,255,255,0.9);
-            backdrop-filter: blur(4px);
-            padding: 1px 6px;
-            border-radius: 6px;
-            white-space: nowrap;
-            cursor: pointer;
-            transition: all var(--transition);
-            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-            display: flex;
-            align-items: center;
-            justify-content: flex-start;
-            z-index: 2;
-            line-height: 1.1;
-            overflow: hidden;
-            text-overflow: ellipsis;
-            border: 1px solid rgba(255,255,255,0.8);
+        .strike-line { width: 100%; height: 2px; background: var(--accent-red); position: absolute; top: 50%; transform: translateY(-50%); z-index: 1; border-radius: 1px; }
+
+        .original-text-ghost {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            color: rgba(180, 180, 180, 0.25);
+            font-weight: 400;
+            display: flex; flex-direction: column; align-items: flex-start; justify-content: flex-start;
+            padding: 3px 6px; pointer-events: none; z-index: 1;
+            overflow: hidden; text-overflow: ellipsis;
         }
-        .new-text-label:hover { background: rgba(255,255,255,1); box-shadow: 0 4px 12px rgba(0,0,0,0.15); }
+        .original-text-ghost .label-line {
+            text-decoration: line-through;
+            text-decoration-color: rgba(200, 50, 50, 0.5);
+            text-decoration-thickness: 1.5px;
+        }
+
+        .new-text-label {
+            color: #0c6231;
+            font-weight: 600;
+            font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(240, 255, 240, 0.88);
+            padding: 3px 6px; border-radius: 6px;
+            cursor: pointer;
+            transition: box-shadow .2s ease, background .2s ease;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+            display: flex; flex-direction: column; align-items: flex-start; justify-content: flex-start;
+            z-index: 2; overflow: visible;
+            border: 1px solid rgba(12,98,49,0.35);
+            box-sizing: border-box;
+        }
+        .new-text-label:hover { background: rgba(240, 255, 240, 1); }
+        .label-line { white-space: pre; }
+
         .delete-btn {
             position: absolute; right: -12px; top: -12px;
-            background: #ef4444; color: white; border-radius: 50%;
-            width: 20px; height: 20px; font-size: 10px; border: none;
+            background: var(--accent-red); color: white; border-radius: 50%;
+            width: 20px; height: 20px; font-size: 10px; border: 2px solid #fff;
             cursor: pointer; display: flex; align-items: center; justify-content: center;
-            padding: 0; box-shadow: 0 2px 8px rgba(239,68,68,0.4);
-            transition: all var(--transition); z-index: 6; border: 2px solid white;
+            padding: 0; transition: all var(--transition); z-index: 6;
         }
-        .delete-btn:hover { background: #dc2626; transform: scale(1.2); }
+        .delete-btn:hover { background: var(--accent-red-dark); transform: scale(1.2); }
 
-        .nota-vobo {
+        .nota-item {
             position: absolute;
-            background: transparent;
-            border: 1px solid rgba(16,185,129,0.6);
+            background: rgba(255,255,255,0.85);
+            border: 1.5px solid var(--accent-blue);
             border-radius: 8px;
             padding: 4px 8px;
-            color: #065f46;
-            font-weight: 700;
-            font-size: 12px;
-            word-wrap: break-word;
             cursor: move;
             pointer-events: auto;
             z-index: 5;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+            box-shadow: 0 4px 14px rgba(0,0,0,0.25);
             user-select: none;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            text-align: center;
+            transition: box-shadow .15s ease;
         }
-        .nota-vobo .delete-vobo {
-            position: absolute;
-            right: -10px; top: -10px;
-            background: #ef4444; color: white; border-radius: 50%;
-            width: 18px; height: 18px; font-size: 10px; border: none;
-            cursor: pointer; display: flex; align-items: center; justify-content: center;
-            padding: 0; box-shadow: 0 2px 6px rgba(239,68,68,0.5);
-            z-index: 7; border: 2px solid white;
-            transition: all 0.2s;
+        .nota-item:hover { box-shadow: 0 6px 18px rgba(0,0,0,0.3); }
+        .nota-item[data-kind="vobo"] { border-color: var(--accent-green); }
+        .nota-item[data-kind="nota"] { border-color: var(--accent-blue); }
+        .nota-item-text {
+            width: 100%; height: 100%;
+            display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center;
+            font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; font-weight: 700;
+            pointer-events: none;
         }
-        .nota-vobo .delete-vobo:hover { background: #dc2626; transform: scale(1.2); }
-        .nota-vobo .resize-handle {
-            position: absolute;
-            right: 0; bottom: 0;
-            width: 14px; height: 14px;
-            background: #10b981;
-            cursor: nwse-resize;
-            border-radius: 0 0 6px 0;
+        .nota-item[data-kind="vobo"] .nota-item-text { color: var(--accent-green-dark); }
+        .nota-item[data-kind="nota"] .nota-item-text { color: var(--accent-blue-dark); }
+        .nota-item .delete-nota-btn { position: absolute; right: -10px; top: -10px; }
+        .nota-item .resize-handle {
+            position: absolute; right: 0; bottom: 0; width: 14px; height: 14px;
+            cursor: nwse-resize; border-radius: 0 0 6px 0;
             clip-path: polygon(100% 0, 0 100%, 100% 100%);
         }
+        .nota-item[data-kind="vobo"] .resize-handle { background: var(--accent-green); }
+        .nota-item[data-kind="nota"] .resize-handle { background: var(--accent-blue); }
 
-        /* ========== NOTES WIDGET ========== */
-        .notes-widget {
-            position: fixed;
-            right: 20px; bottom: 24px;
-            z-index: 90;
+        .nota-edit-panel {
             display: none;
-            transition: all 0.3s ease;
+            position: fixed; z-index: 10500; width: 280px;
+            background: var(--bg-elevated);
+            border: 1px solid var(--border-strong);
+            border-radius: var(--radius);
+            box-shadow: var(--shadow-elevated);
+            padding: 12px; flex-direction: column; gap: 10px;
+            animation: scaleIn 0.15s ease;
         }
+        .nota-edit-panel-title { font-size: 12px; font-weight: 700; color: var(--text-secondary); text-transform: uppercase; letter-spacing: .5px; }
+        .nota-edit-textarea {
+            width: 100%; min-height: 100px; resize: vertical;
+            background: rgba(0,0,0,0.25); color: var(--text-primary);
+            border: 1px solid var(--border-subtle); border-radius: var(--radius-sm);
+            padding: 8px 10px; font-family: 'Inter', sans-serif; font-size: 13px; line-height: 1.5;
+        }
+        .nota-edit-textarea:focus { outline: none; border-color: var(--accent-blue); box-shadow: 0 0 0 3px var(--accent-blue-soft); }
+        .nota-edit-actions { display: flex; justify-content: flex-end; gap: 8px; }
+
+        .notes-widget { position: fixed; right: 20px; bottom: 24px; z-index: 90; display: none; transition: all 0.25s ease; }
         .notes-widget.visible { display: block; }
         .notes-widget.minimized {
-            width: 56px; height: 56px;
-            background: rgba(245,158,11,0.8);
-            backdrop-filter: blur(10px);
-            border-radius: 50%;
-            box-shadow: 0 8px 20px rgba(245,158,11,0.4), inset 0 1px 0 rgba(255,255,255,0.4);
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 28px;
-            animation: float 3s ease-in-out infinite, glowPulse 2s ease-in-out infinite;
-            border: 2px solid rgba(255,255,255,0.6);
-            user-select: none;
-            color: white;
+            width: 52px; height: 52px; background: var(--accent-amber);
+            border-radius: 50%; box-shadow: var(--shadow-elevated);
+            cursor: pointer; display: flex; align-items: center; justify-content: center;
+            font-size: 24px; border: 1px solid rgba(255,255,255,0.2); user-select: none; color: #1a1300;
         }
-        .notes-widget.minimized::after {
-            content: '';
-            position: absolute;
-            top: -5px; right: -5px;
-            width: 16px; height: 16px;
-            background: #ef4444;
-            border-radius: 50%;
-            border: 2px solid white;
-            animation: badgePulse 2s infinite;
-        }
-        @keyframes float { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-8px)} }
-        @keyframes glowPulse { 0%,100%{box-shadow:0 8px 20px rgba(245,158,11,0.4), inset 0 1px 0 rgba(255,255,255,0.4)} 50%{box-shadow:0 8px 20px rgba(245,158,11,0.4),0 0 0 15px rgba(245,158,11,0)} }
-        @keyframes badgePulse { 0%,100%{transform:scale(1)} 50%{transform:scale(1.2)} }
-        .notes-widget.minimized:hover { transform: translateY(-5px) scale(1.08); }
+        .notes-widget.minimized:hover { transform: translateY(-3px); }
         .notes-widget.minimized .notes-content { display: none; }
         .notes-widget.minimized .notes-icon { display: block; }
-
         .notes-widget.maximized {
-            width: 600px;
-            height: 600px;
-            background: rgba(255,255,255,0.35);
-            backdrop-filter: blur(25px);
-            border-radius: var(--radius-xl);
-            box-shadow: 0 20px 40px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.5);
-            flex-direction: column;
-            padding: 28px;
-            cursor: default;
-            border: 1px solid rgba(255,255,255,0.5);
+            width: 420px; height: 480px; background: var(--bg-elevated);
+            border-radius: var(--radius-lg); box-shadow: var(--shadow-elevated);
+            flex-direction: column; padding: 22px; cursor: default; border: 1px solid var(--border-subtle);
             display: flex;
         }
         .notes-widget.maximized .notes-icon { display: none; }
         .notes-widget.maximized .notes-content { display: flex; flex-direction: column; height: 100%; }
-        .notes-content .notes-header {
-            font-weight: 700; color: #1e293b; margin-bottom: 16px;
-            display: flex; justify-content: space-between; align-items: center; font-size: 18px;
-        }
-        .notes-content .notes-header span { display: flex; align-items: center; gap: 10px; }
+        .notes-content .notes-header { font-weight: 700; color: var(--text-primary); margin-bottom: 14px; display: flex; justify-content: space-between; align-items: center; font-size: 16px; }
+        .notes-content .notes-header span { display: flex; align-items: center; gap: 8px; }
         .close-notes {
-            background: rgba(255,255,255,0.5);
-            border: none; color: #475569; font-size: 16px;
-            cursor: pointer; padding: 8px; border-radius: 50%;
-            transition: all var(--transition); width: 36px; height: 36px;
-            display: flex; align-items: center; justify-content: center;
-            box-shadow: inset 0 1px 0 rgba(255,255,255,0.6);
+            background: rgba(255,255,255,0.06); border: none; color: var(--text-secondary); font-size: 14px;
+            cursor: pointer; padding: 6px; border-radius: 50%; transition: all var(--transition);
+            width: 32px; height: 32px; display: flex; align-items: center; justify-content: center;
         }
-        .close-notes:hover { background: #ef4444; color: white; transform: rotate(90deg); }
+        .close-notes:hover { background: var(--accent-red); color: #fff; }
         .notes-content textarea {
-            flex-grow: 1; width: 100%;
-            padding: 16px;
-            border: 1px solid rgba(255,255,255,0.7);
-            border-radius: var(--radius);
-            font-family: 'Inter', sans-serif;
-            font-size: 15px;
-            resize: none;
-            outline: none;
-            transition: all var(--transition);
-            line-height: 1.6;
-            background: rgba(255,255,255,0.5);
-            backdrop-filter: blur(10px);
-            color: #1e293b;
+            flex-grow: 1; width: 100%; padding: 14px; border: 1px solid var(--border-subtle);
+            border-radius: var(--radius); font-family: 'Inter', sans-serif; font-size: 14px; resize: none;
+            outline: none; transition: all var(--transition); line-height: 1.6;
+            background: rgba(0,0,0,0.2); color: var(--text-primary);
         }
-        .notes-content textarea:focus {
-            border-color: #6366f1;
-            box-shadow: 0 0 0 4px rgba(99,102,241,0.15);
-            background: rgba(255,255,255,0.7);
+        .notes-content textarea:focus { border-color: var(--accent-blue); box-shadow: 0 0 0 3px var(--accent-blue-soft); }
+
+        .images-widget { position: fixed; left: 20px; bottom: 24px; z-index: 90; display: none; }
+        .images-widget.visible { display: block; }
+        .images-widget-fab {
+            width: 52px; height: 52px; border-radius: 50%; background: var(--accent-purple);
+            display: flex; align-items: center; justify-content: center; color: #fff; font-size: 20px;
+            cursor: pointer; box-shadow: var(--shadow-elevated); border: 1px solid rgba(255,255,255,0.2);
+            position: relative; transition: transform .15s ease;
         }
+        .images-widget-fab:hover { transform: translateY(-3px); }
+        .images-count-badge {
+            position: absolute; top: -6px; right: -6px; background: var(--accent-orange); color: #fff;
+            font-size: 11px; font-weight: 700; min-width: 20px; height: 20px; border-radius: 50%;
+            display: none; align-items: center; justify-content: center; border: 2px solid var(--bg-base); padding: 0 4px;
+        }
+        .images-panel {
+            display: none; position: absolute; bottom: 62px; left: 0; width: 300px; max-height: 380px;
+            background: var(--bg-elevated); border: 1px solid var(--border-subtle); border-radius: var(--radius-lg);
+            box-shadow: var(--shadow-elevated); padding: 14px; flex-direction: column; gap: 10px;
+        }
+        .images-widget.open .images-panel { display: flex; }
+        .images-panel-header { display: flex; justify-content: space-between; align-items: center; color: var(--text-primary); font-weight: 700; font-size: 14px; }
+        .images-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; overflow-y: auto; max-height: 260px; padding-right: 2px; }
+        .image-thumb-cell { position: relative; border: 1px solid var(--border-subtle); border-radius: 8px; overflow: hidden; aspect-ratio: 1 / 1; background: var(--bg-elevated-2); }
+        .image-thumb-cell img { width: 100%; height: 100%; object-fit: cover; display: block; }
+        .image-thumb-delete {
+            position: absolute; top: 2px; right: 2px; width: 18px; height: 18px; border-radius: 50%;
+            background: var(--accent-red); color: #fff; border: none; font-size: 9px;
+            display: flex; align-items: center; justify-content: center; cursor: pointer;
+        }
+        .image-thumb-name {
+            position: absolute; bottom: 0; left: 0; right: 0; background: rgba(0,0,0,0.6); color: #fff;
+            font-size: 8px; padding: 2px 3px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+        }
+        .images-empty-hint { color: var(--text-muted); font-size: 12px; text-align: center; padding: 10px 0; }
 
         @media (max-width: 768px) {
             .toolbar.maximized { padding: 12px 8px; }
             .btn { padding: 5px 10px; font-size: 10px; }
             .notes-widget.maximized { width: 90vw; height: 70vh; right: 5vw; }
-            .notes-widget.minimized { width: 48px; height: 48px; font-size: 24px; right: 20px; }
+            .notes-widget.minimized { width: 46px; height: 46px; font-size: 22px; }
+            .images-panel { width: 80vw; }
             .preview-modal { width: 100%; height: 100%; border-radius: 0; }
         }
     </style>
 </head>
 <body>
 
-    <div class="drop-overlay" id="dropOverlay"><i class="fa-solid fa-cloud-upload-alt"></i> Soltar PDF aquí</div>
+    <div class="drop-overlay" id="dropOverlay"><i class="fa-solid fa-cloud-upload-alt"></i>&nbsp; Soltar PDF aquí</div>
 
     <div class="toolbar-container" id="toolbarContainer">
         <div class="toolbar maximized" id="mainToolbar">
@@ -842,22 +518,20 @@
                         <button class="btn btn-nav" id="next" onclick="onNextPage()"><i class="fa-solid fa-chevron-right"></i></button>
                     </div>
                     <button class="btn btn-replace" onmousedown="event.preventDefault(); aplicarCorreccion()"><i class="fa-solid fa-pen-to-square"></i> Reemplazar</button>
-                    <button class="btn btn-vobo" onclick="insertarNotaVobo()" title="Inserta una nota V°B° editable. Haz doble clic sobre la nota para modificar su texto.">
-                        <i class="fa-solid fa-stamp"></i> Nota / V°B°
-                    </button>
-                    <button class="btn btn-image" onclick="document.getElementById('imageUpload').click()"><i class="fa-solid fa-image"></i> Imagen</button>
-                    <input type="file" id="imageUpload" accept="image/*" style="display:none" onchange="handleImageUpload(event)">
-                    <span id="imageStatus" class="image-status" style="display:none;">
-                        Imagen cargada <i class="fa-solid fa-times" onclick="removeImage()"></i>
-                    </span>
+                    <button class="btn btn-highlight" onmousedown="event.preventDefault(); aplicarResaltado()"><i class="fa-solid fa-highlighter"></i> Resaltar</button>
+                </div>
+                <div class="toolbar-row">
+                    <button class="btn btn-nota" onclick="insertarNota()"><i class="fa-solid fa-note-sticky"></i> Nota</button>
+                    <button class="btn btn-vobo" onclick="insertarNotaVobo()"><i class="fa-solid fa-stamp"></i> V°B°</button>
+                    <button class="btn btn-image" onclick="document.getElementById('imageUpload').click()"><i class="fa-solid fa-images"></i> Imágenes</button>
+                    <input type="file" id="imageUpload" accept="image/*" multiple style="display:none" onchange="handleImageUpload(event)">
                     <button class="btn btn-save" id="btnGuardar" onclick="verificarAutorYGuardar()" style="display:none;"><i class="fa-solid fa-floppy-disk"></i> Guardar</button>
                 </div>
-                <div class="toolbar-tip"><i class="fa-solid fa-lightbulb"></i><span><strong>Tip:</strong> Selecciona texto y presiona <strong>Supr</strong> para reemplazar. <strong>Ctrl+Z</strong> deshacer.</span></div>
+                <div class="toolbar-tip"><i class="fa-solid fa-lightbulb"></i><span><strong>Tip:</strong> Selecciona texto → <strong>Reemplazar</strong>/<strong>Supr</strong> o <strong>Resaltar</strong>. Clic simple en una nota para editarla. <strong>Ctrl+Z</strong> deshacer.</span></div>
             </div>
         </div>
     </div>
 
-    <!-- Preview Modal -->
     <div class="preview-modal-overlay" id="previewModalOverlay">
         <div class="preview-modal">
             <div class="preview-header">
@@ -868,7 +542,6 @@
         </div>
     </div>
 
-    <!-- Modal de reemplazo -->
     <div class="modal-overlay" id="replacementModal">
         <div class="modal-content">
             <div class="modal-header"><h3 id="modalTitle"><i class="fa-solid fa-pen-to-square"></i> Reemplazar Texto</h3><button class="close-modal" id="closeModalBtn"><i class="fa-solid fa-xmark"></i></button></div>
@@ -888,7 +561,6 @@
         </div>
     </div>
 
-    <!-- Confirmación autor -->
     <div class="confirm-modal-overlay" id="confirmAuthorModal">
         <div class="confirm-modal">
             <div class="warning-icon">⚠️</div>
@@ -898,6 +570,15 @@
                 <button class="btn btn-continue" id="btnContinueWithoutAuthor"><i class="fa-solid fa-forward"></i> Continuar sin autor</button>
                 <button class="btn btn-fill-author" id="btnFillAuthor"><i class="fa-solid fa-pencil"></i> Completar autor ahora</button>
             </div>
+        </div>
+    </div>
+
+    <div class="nota-edit-panel" id="notaEditPanel">
+        <div class="nota-edit-panel-title"><i class="fa-solid fa-pen"></i> Editar nota</div>
+        <textarea class="nota-edit-textarea" id="notaEditTextarea" placeholder="Escribe el texto de la nota..."></textarea>
+        <div class="nota-edit-actions">
+            <button class="btn btn-cancel" id="notaEditCancelBtn"><i class="fa-solid fa-times"></i> Cancelar</button>
+            <button class="btn btn-apply" id="notaEditSaveBtn"><i class="fa-solid fa-check"></i> Guardar</button>
         </div>
     </div>
 
@@ -919,35 +600,105 @@
         </div>
     </div>
 
+    <div class="images-widget" id="imagesWidget">
+        <div class="images-widget-fab" id="imagesFab">
+            <i class="fa-solid fa-images"></i>
+            <span class="images-count-badge" id="imagesCountBadge">0</span>
+        </div>
+        <div class="images-panel">
+            <div class="images-panel-header">
+                <span><i class="fa-solid fa-images"></i> Imágenes adjuntas</span>
+                <button class="close-notes" id="btnCloseImagesPanel"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            <div class="images-grid" id="imagesGrid"></div>
+            <p class="images-empty-hint" id="imagesEmptyHint">Aún no hay imágenes.</p>
+        </div>
+    </div>
+
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.min.js"></script>
     <script src="https://unpkg.com/pdf-lib@1.17.1/dist/pdf-lib.min.js"></script>
     <script>
         pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.worker.min.js';
 
-        // ========== FUNCIÓN DE SANITIZACIÓN DE TEXTOS ==========
         function sanitizeText(texto, conservarSaltos = false) {
             if (!texto) return '';
             let limpio = texto.replace(/\r\n/g, '\n').replace(/\r/g, '\n');
-            if (!conservarSaltos) {
-                limpio = limpio.replace(/\n/g, ' ');
-            }
+            if (!conservarSaltos) limpio = limpio.replace(/\n/g, ' ');
             return limpio;
+        }
+
+        function measureLines(ctx, text, maxWidth) {
+            const paragraphs = sanitizeText(text, true).split('\n');
+            const allLines = [];
+            paragraphs.forEach(paragraph => {
+                const words = paragraph.split(' ').filter(w => w.length > 0);
+                if (words.length === 0) { allLines.push(''); return; }
+                let currentLine = words[0];
+                for (let i = 1; i < words.length; i++) {
+                    const testLine = currentLine + ' ' + words[i];
+                    if (ctx.measureText(testLine).width <= maxWidth) {
+                        currentLine = testLine;
+                    } else {
+                        allLines.push(currentLine);
+                        currentLine = words[i];
+                    }
+                }
+                allLines.push(currentLine);
+            });
+            return allLines;
+        }
+
+        function fitTextToBox(text, boxWidthPx, boxHeightPx, opts = {}) {
+            const {
+                fontFamily = "'Helvetica Neue', Helvetica, Arial, sans-serif",
+                fontWeight = '400',
+                minFontSize = 7,
+                maxFontSize = 32,
+                lineHeightMultiplier = 1.2,
+                paddingPx = 6
+            } = opts;
+
+            if (!fitTextToBox._canvas) fitTextToBox._canvas = document.createElement('canvas');
+            const ctx = fitTextToBox._canvas.getContext('2d');
+            const usableWidth = Math.max(10, boxWidthPx - paddingPx * 2);
+            const usableHeight = Math.max(10, boxHeightPx - paddingPx * 2);
+            let fontSize = maxFontSize;
+            let lines = [];
+            let fits = false;
+
+            while (fontSize >= minFontSize) {
+                ctx.font = `${fontWeight} ${fontSize}px ${fontFamily}`;
+                lines = measureLines(ctx, text, usableWidth);
+                const totalHeight = lines.length * fontSize * lineHeightMultiplier;
+                if (totalHeight <= usableHeight) { fits = true; break; }
+                fontSize -= 0.5;
+            }
+
+            if (!fits) {
+                fontSize = minFontSize;
+                ctx.font = `${fontWeight} ${fontSize}px ${fontFamily}`;
+                lines = measureLines(ctx, text, usableWidth);
+            }
+
+            const lineHeight = fontSize * lineHeightMultiplier;
+            const requiredHeight = lines.length * lineHeight + paddingPx * 2;
+            return { fontSize, lines, lineHeight, requiredHeight, fits };
         }
 
         let pdfDoc = null, pageNum = 1, pageRendering = false, pageNumPending = null, scale = 1.5;
         let canvas = document.getElementById('the-canvas'), ctx = canvas.getContext('2d');
         let textLayer = document.getElementById('text-layer'), annotationsLayer = document.getElementById('annotations-layer');
+
         let annotationsData = {};
-        let notasVoboData = {};
+        let notasData = {};
+        let highlightsData = {};
         let pdfBytesOriginal = null;
         let nombreArchivoOriginal = "documento.pdf";
 
         let undoStack = [];
         const MAX_UNDO = 30;
 
-        let uploadedImageBytes = null;
-        let uploadedImageType = null;
-        const imageStatus = document.getElementById('imageStatus');
+        let uploadedImages = [];
 
         const modalOverlay = document.getElementById('replacementModal');
         const modalTitle = document.getElementById('modalTitle');
@@ -981,15 +732,9 @@
         const previewIframe = document.getElementById('previewIframe');
         const closePreviewBtn = document.getElementById('closePreviewBtn');
 
-        // ========== DRAG & DROP ==========
         const dropOverlay = document.getElementById('dropOverlay');
-        document.addEventListener('dragover', (e) => {
-            e.preventDefault();
-            dropOverlay.classList.add('active');
-        });
-        document.addEventListener('dragleave', (e) => {
-            if (e.relatedTarget === null) dropOverlay.classList.remove('active');
-        });
+        document.addEventListener('dragover', (e) => { e.preventDefault(); dropOverlay.classList.add('active'); });
+        document.addEventListener('dragleave', (e) => { if (e.relatedTarget === null) dropOverlay.classList.remove('active'); });
         document.addEventListener('drop', (e) => {
             e.preventDefault();
             dropOverlay.classList.remove('active');
@@ -997,7 +742,6 @@
             if (file && file.type === 'application/pdf') loadPDF(file);
         });
 
-        // ========== TOOLBAR ==========
         toolbarToggle.addEventListener('click', () => {
             isToolbarMinimized = !isToolbarMinimized;
             if (isToolbarMinimized) {
@@ -1008,7 +752,6 @@
                 toolbarToggle.innerHTML = '<i class="fa-solid fa-chevron-up"></i>';
             }
         });
-
         window.addEventListener('scroll', () => {
             if (window.scrollY > 100 && !isToolbarMinimized) {
                 isToolbarMinimized = true;
@@ -1016,14 +759,70 @@
             }
         });
 
-        // ========== NOTES WIDGET ==========
         function openNotesWidget() { notesWidget.classList.remove('minimized'); notesWidget.classList.add('maximized'); txtNotasAdicionales.focus(); }
         function closeNotesWidget() { notesWidget.classList.remove('maximized'); notesWidget.classList.add('minimized'); }
         notesIcon.addEventListener('click', (e) => { e.stopPropagation(); if (notesWidget.classList.contains('minimized')) openNotesWidget(); });
         btnCloseNotes.addEventListener('click', (e) => { e.stopPropagation(); closeNotesWidget(); });
         document.addEventListener('click', (e) => { if (notesWidget.classList.contains('maximized') && !notesWidget.contains(e.target)) closeNotesWidget(); });
 
-        // ========== FILE LOADING ==========
+        const imagesWidget = document.getElementById('imagesWidget');
+        const imagesFab = document.getElementById('imagesFab');
+        const imagesGrid = document.getElementById('imagesGrid');
+        const imagesCountBadge = document.getElementById('imagesCountBadge');
+        const imagesEmptyHint = document.getElementById('imagesEmptyHint');
+
+        imagesFab.addEventListener('click', (e) => { e.stopPropagation(); imagesWidget.classList.toggle('open'); });
+        document.getElementById('btnCloseImagesPanel').addEventListener('click', (e) => { e.stopPropagation(); imagesWidget.classList.remove('open'); });
+        document.addEventListener('click', (e) => { if (imagesWidget.classList.contains('open') && !imagesWidget.contains(e.target)) imagesWidget.classList.remove('open'); });
+
+        function handleImageUpload(event) {
+            const files = Array.from(event.target.files || []);
+            files.forEach(file => {
+                if (!file.type.startsWith('image/')) return;
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    const bytes = new Uint8Array(e.target.result);
+                    const url = URL.createObjectURL(new Blob([bytes], { type: file.type }));
+                    uploadedImages.push({ id: Date.now() + Math.random(), bytes, type: file.type, name: file.name, url });
+                    renderImagesPanel();
+                    imagesWidget.classList.add('open');
+                };
+                reader.readAsArrayBuffer(file);
+            });
+            event.target.value = '';
+        }
+
+        function eliminarImagen(id) {
+            const img = uploadedImages.find(i => i.id === id);
+            if (img && img.url) URL.revokeObjectURL(img.url);
+            uploadedImages = uploadedImages.filter(i => i.id !== id);
+            renderImagesPanel();
+        }
+
+        function renderImagesPanel() {
+            imagesCountBadge.textContent = uploadedImages.length;
+            imagesCountBadge.style.display = uploadedImages.length ? 'flex' : 'none';
+            imagesEmptyHint.style.display = uploadedImages.length ? 'none' : 'block';
+            imagesGrid.innerHTML = '';
+            uploadedImages.forEach(img => {
+                const cell = document.createElement('div');
+                cell.className = 'image-thumb-cell';
+                const thumb = document.createElement('img');
+                thumb.src = img.url; thumb.alt = img.name;
+                cell.appendChild(thumb);
+                const del = document.createElement('button');
+                del.className = 'image-thumb-delete';
+                del.innerHTML = '<i class="fa-solid fa-xmark"></i>';
+                del.onclick = () => eliminarImagen(img.id);
+                cell.appendChild(del);
+                const label = document.createElement('span');
+                label.className = 'image-thumb-name';
+                label.textContent = img.name;
+                cell.appendChild(label);
+                imagesGrid.appendChild(cell);
+            });
+        }
+
         document.getElementById('upload').addEventListener('change', async function(e) {
             const file = e.target.files[0];
             if (!file) return;
@@ -1041,9 +840,11 @@
                 document.getElementById('btnGuardar').style.display = 'inline-flex';
                 document.getElementById('btnVistaPrevia').style.display = 'inline-flex';
                 notesWidget.classList.add('visible');
+                imagesWidget.classList.add('visible');
                 closeNotesWidget();
                 annotationsData = {};
-                notasVoboData = {};
+                notasData = {};
+                highlightsData = {};
                 undoStack = [];
                 pageNum = 1;
                 scale = 1.5;
@@ -1051,7 +852,6 @@
             });
         }
 
-        // ========== RENDERING ==========
         function renderPage(num) {
             return new Promise((resolve) => {
                 pageRendering = true;
@@ -1072,7 +872,8 @@
                             textLayer.querySelectorAll('span').forEach(span => { span.style.userSelect = 'text'; span.style.webkitUserSelect = 'text'; span.style.cursor = 'text'; });
                         });
                         restaurarAnotaciones(num);
-                        renderNotasVobo(num);
+                        renderNotas(num);
+                        renderHighlights(num);
                         pageRendering = false;
                         if (pageNumPending !== null) { renderPage(pageNumPending); pageNumPending = null; }
                         resolve();
@@ -1086,19 +887,38 @@
         function onPrevPage() { if (pageNum <= 1) return; pageNum--; queueRenderPage(pageNum); }
         function onNextPage() { if (pageNum >= pdfDoc.numPages) return; pageNum++; queueRenderPage(pageNum); }
 
-        // ========== CORRECTIONS (línea por línea) ==========
         function saveUndoState() {
             undoStack.push({
                 annotations: JSON.parse(JSON.stringify(annotationsData)),
-                notasVobo: JSON.parse(JSON.stringify(notasVoboData))
+                notas: JSON.parse(JSON.stringify(notasData)),
+                highlights: JSON.parse(JSON.stringify(highlightsData))
             });
             if (undoStack.length > MAX_UNDO) undoStack.shift();
         }
 
-        function aplicarCorreccion() {
+        function undo() {
+            if (undoStack.length === 0) return;
+            const prev = undoStack.pop();
+            annotationsData = prev.annotations;
+            notasData = prev.notas;
+            highlightsData = prev.highlights;
+            restaurarAnotaciones(pageNum);
+            renderNotas(pageNum);
+            renderHighlights(pageNum);
+            showNotification('Deshecho', 'info');
+        }
+
+        // ============================================================
+        // OBTENER RECTS DE SELECCIÓN - CORREGIDO
+        // Ahora usa getClientRects() para obtener SOLO los rectángulos
+        // de las líneas que CONTIENEN texto seleccionado, evitando
+        // abarcar palabras completas no seleccionadas en la misma fila.
+        // ============================================================
+        function obtenerRectsDeSeleccion() {
             const selection = window.getSelection();
             const textoSeleccionado = selection.toString().trim();
-            if (!textoSeleccionado) { alert("No has seleccionado nada."); return; }
+            if (!textoSeleccionado) return null;
+
             const range = selection.getRangeAt(0);
             const rects = range.getClientRects();
             const viewerRect = annotationsLayer.getBoundingClientRect();
@@ -1114,8 +934,10 @@
                     height: r.height
                 });
             }
-            if (lineRects.length === 0) return;
 
+            if (lineRects.length === 0) return null;
+
+            // Calcular el bounding box EXACTO de todos los rects de selección
             let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
             lineRects.forEach(r => {
                 if (r.x < minX) minX = r.x;
@@ -1123,6 +945,7 @@
                 if (r.x + r.width > maxX) maxX = r.x + r.width;
                 if (r.y + r.height > maxY) maxY = r.y + r.height;
             });
+
             const overall = {
                 x: minX,
                 y: minY,
@@ -1131,7 +954,13 @@
             };
 
             selection.removeAllRanges();
-            showReplacementModal(textoSeleccionado, { overall, lines: lineRects });
+            return { texto: textoSeleccionado, overall, lines: lineRects };
+        }
+
+        function aplicarCorreccion() {
+            const sel = obtenerRectsDeSeleccion();
+            if (!sel) { alert("No has seleccionado nada."); return; }
+            showReplacementModal(sel.texto, { overall: sel.overall, lines: sel.lines, textoOriginal: sel.texto });
         }
 
         document.addEventListener('keydown', function(e) {
@@ -1140,19 +969,12 @@
                 if (txt !== '') { e.preventDefault(); aplicarCorreccion(); }
             }
             if (e.ctrlKey && e.key === 'z') { e.preventDefault(); undo(); }
+            if (e.key === 'Escape') {
+                const panel = document.getElementById('notaEditPanel');
+                if (panel.style.display === 'flex') cerrarEditorNota();
+            }
         });
 
-        function undo() {
-            if (undoStack.length === 0) return;
-            const prev = undoStack.pop();
-            annotationsData = prev.annotations;
-            notasVoboData = prev.notasVobo;
-            restaurarAnotaciones(pageNum);
-            renderNotasVobo(pageNum);
-            showNotification('Deshecho', 'info');
-        }
-
-        // ========== MODAL (TEXTO SIN SALTOS DE LÍNEA) ==========
         function showReplacementModal(textoSeleccionado, correctionData) {
             originalTextDisplay.textContent = textoSeleccionado;
             modalTitle.innerHTML = '<i class="fa-solid fa-pen-to-square"></i> Reemplazar Texto';
@@ -1160,6 +982,7 @@
             replacementBox.style.display = 'block';
             applyReplacementBtn.innerHTML = '<i class="fa-solid fa-check"></i> Aplicar Cambio';
             applyReplacementBtn.style.display = 'inline-flex';
+            applyReplacementBtn.onclick = applyReplacementFromModal;
             pendingCorrection = correctionData;
             modalOverlay.style.display = 'flex';
             setTimeout(() => replacementTextInput.focus(), 100);
@@ -1167,15 +990,8 @@
         }
 
         function hideReplacementModal() { modalOverlay.style.display = 'none'; pendingCorrection = null; replacementTextInput.value = ''; }
-
-        function autoResizeTextarea(textarea) {
-            textarea.style.height = 'auto';
-            textarea.style.height = (textarea.scrollHeight) + 'px';
-        }
-
-        replacementTextInput.addEventListener('input', function() {
-            autoResizeTextarea(this);
-        });
+        function autoResizeTextarea(textarea) { textarea.style.height = 'auto'; textarea.style.height = (textarea.scrollHeight) + 'px'; }
+        replacementTextInput.addEventListener('input', function() { autoResizeTextarea(this); });
 
         function applyReplacementFromModal() {
             saveUndoState();
@@ -1184,12 +1000,10 @@
             if (!annotationsData[pageNum]) annotationsData[pageNum] = [];
             annotationsData[pageNum].push({
                 id: Date.now(),
-                x: pendingCorrection.overall.x,
-                y: pendingCorrection.overall.y,
-                width: pendingCorrection.overall.width,
-                height: pendingCorrection.overall.height,
-                newText: textoNuevo,
-                lines: pendingCorrection.lines
+                x: pendingCorrection.overall.x, y: pendingCorrection.overall.y,
+                width: pendingCorrection.overall.width, height: pendingCorrection.overall.height,
+                newText: textoNuevo, lines: pendingCorrection.lines,
+                originalText: pendingCorrection.textoOriginal
             });
             restaurarAnotaciones(pageNum);
             hideReplacementModal();
@@ -1197,23 +1011,17 @@
 
         closeModalBtn.addEventListener('click', hideReplacementModal);
         cancelReplacementBtn.addEventListener('click', hideReplacementModal);
-        applyReplacementBtn.addEventListener('click', applyReplacementFromModal);
-        replacementTextInput.addEventListener('keydown', function(e) {
-            if (e.key === 'Enter' && e.ctrlKey) {
-                e.preventDefault();
-                applyReplacementFromModal();
-            }
-        });
         modalOverlay.addEventListener('click', (e) => { if (e.target === modalOverlay) hideReplacementModal(); });
+        replacementTextInput.addEventListener('keydown', function(e) {
+            if (e.key === 'Enter' && e.ctrlKey) { e.preventDefault(); applyReplacementBtn.onclick && applyReplacementBtn.onclick(); }
+        });
 
-        // ========== RESTORE ANNOTATIONS ==========
         function restaurarAnotaciones(num) {
-            annotationsLayer.innerHTML = '';
+            annotationsLayer.querySelectorAll('.correction-mark').forEach(el => el.remove());
             if (!annotationsData[num]) return;
             annotationsData[num].forEach(marca => {
                 const div = document.createElement('div');
                 div.className = 'correction-mark';
-                div.style.cssText = `left:${marca.x}px;top:${marca.y}px;width:${marca.width}px;height:${marca.height}px;`;
 
                 if (marca.lines && marca.lines.length > 0) {
                     marca.lines.forEach(line => {
@@ -1221,7 +1029,7 @@
                         lineDiv.className = 'strike-line';
                         lineDiv.style.position = 'absolute';
                         lineDiv.style.left = (line.x - marca.x) + 'px';
-                        lineDiv.style.top = (line.y - marca.y) + 'px';
+                        lineDiv.style.top = (line.y - marca.y + line.height / 2) + 'px';
                         lineDiv.style.width = line.width + 'px';
                         lineDiv.style.height = '2px';
                         div.appendChild(lineDiv);
@@ -1232,19 +1040,61 @@
                     div.appendChild(singleLine);
                 }
 
+                const ghost = document.createElement('div');
+                ghost.className = 'original-text-ghost';
+                ghost.style.position = 'absolute';
+                ghost.style.top = '0';
+                ghost.style.left = '0';
+                ghost.style.width = '100%';
+                ghost.style.height = '100%';
+                div.appendChild(ghost);
+
                 const label = document.createElement('div');
                 label.className = 'new-text-label';
-                label.textContent = marca.newText;
                 label.onclick = () => editarAnotacion(marca.id, num);
                 div.appendChild(label);
 
                 const delBtn = document.createElement('button');
                 delBtn.className = 'delete-btn';
                 delBtn.innerHTML = '<i class="fa-solid fa-xmark"></i>';
-                delBtn.onclick = () => borrarAnotacion(marca.id, num);
+                delBtn.onclick = (e) => { e.stopPropagation(); borrarAnotacion(marca.id, num); };
                 div.appendChild(delBtn);
 
                 annotationsLayer.appendChild(div);
+
+                const fit = fitTextToBox(marca.newText, marca.width, marca.height, {
+                    fontFamily: "'Helvetica Neue', Helvetica, Arial, sans-serif",
+                    fontWeight: '600', minFontSize: 6, maxFontSize: 16, lineHeightMultiplier: 1.2, paddingPx: 4
+                });
+                if (!fit.fits && fit.requiredHeight > marca.height) marca.height = Math.ceil(fit.requiredHeight);
+                marca.fontSize = fit.fontSize;
+                marca.wrappedLines = fit.lines;
+                marca.lineHeight = fit.lineHeight;
+
+                div.style.left = marca.x + 'px';
+                div.style.top = marca.y + 'px';
+                div.style.width = marca.width + 'px';
+                div.style.height = marca.height + 'px';
+
+                ghost.innerHTML = '';
+                ghost.style.fontSize = fit.fontSize + 'px';
+                ghost.style.lineHeight = fit.lineHeight + 'px';
+                fit.lines.forEach(line => {
+                    const lineEl = document.createElement('div');
+                    lineEl.className = 'label-line';
+                    lineEl.textContent = line;
+                    ghost.appendChild(lineEl);
+                });
+
+                label.innerHTML = '';
+                label.style.fontSize = fit.fontSize + 'px';
+                label.style.lineHeight = fit.lineHeight + 'px';
+                fit.lines.forEach(line => {
+                    const lineEl = document.createElement('div');
+                    lineEl.className = 'label-line';
+                    lineEl.textContent = line;
+                    label.appendChild(lineEl);
+                });
             });
         }
 
@@ -1259,17 +1109,12 @@
             applyReplacementBtn.style.display = 'inline-flex';
             pendingCorrection = { id, num, isEdit: true, oldMarca: marca };
             modalOverlay.style.display = 'flex';
-            setTimeout(() => {
-                replacementTextInput.focus();
-                replacementTextInput.select();
-                autoResizeTextarea(replacementTextInput);
-            }, 100);
-            const origFn = applyReplacementBtn.onclick;
+            setTimeout(() => { replacementTextInput.focus(); replacementTextInput.select(); autoResizeTextarea(replacementTextInput); }, 100);
             applyReplacementBtn.onclick = function() {
                 saveUndoState();
                 const txtMod = sanitizeText(replacementTextInput.value.trim(), false);
                 if (txtMod) { marca.newText = txtMod; restaurarAnotaciones(num); }
-                hideReplacementModal(); applyReplacementBtn.onclick = origFn;
+                hideReplacementModal();
             };
         }
 
@@ -1281,56 +1126,153 @@
             }
         }
 
-        // ========== NOTA V°B° (SANITIZADA) ==========
-        function insertarNotaVobo() {
-            if (!pdfDoc) { alert("Primero carga un PDF."); return; }
+        function aplicarResaltado() {
+            const sel = obtenerRectsDeSeleccion();
+            if (!sel) { alert("Selecciona el texto que deseas resaltar."); return; }
             saveUndoState();
-            if (!notasVoboData[pageNum]) notasVoboData[pageNum] = [];
-            const viewerWidth = annotationsLayer.clientWidth;
-            const viewerHeight = annotationsLayer.clientHeight;
-            const defaultWidth = 300;
-            const defaultHeight = 80;
-            const x = (viewerWidth - defaultWidth) / 2;
-            const y = (viewerHeight - defaultHeight) / 2;
-            const nuevaNota = {
+            if (!highlightsData[pageNum]) highlightsData[pageNum] = [];
+            highlightsData[pageNum].push({
                 id: Date.now(),
-                x: Math.max(0, x),
-                y: Math.max(0, y),
-                width: defaultWidth,
-                height: defaultHeight,
-                text: sanitizeText(TEXTO_NOTA_VOBO, true) // texto inicial sin saltos problemáticos
-            };
-            notasVoboData[pageNum].push(nuevaNota);
-            renderNotasVobo(pageNum);
-            showNotification('Nota / V°B° insertada. Puedes moverla, redimensionarla y hacer doble clic para editar el texto.', 'success');
+                x: sel.overall.x, y: sel.overall.y, width: sel.overall.width, height: sel.overall.height,
+                lines: sel.lines
+            });
+            renderHighlights(pageNum);
+            showNotification('Texto resaltado.', 'success');
         }
 
-        function renderNotasVobo(num) {
-            const existing = annotationsLayer.querySelectorAll('.nota-vobo');
-            existing.forEach(el => el.remove());
-            if (!notasVoboData[num]) return;
-            notasVoboData[num].forEach(nota => {
-                const div = document.createElement('div');
-                div.className = 'nota-vobo';
-                div.style.left = nota.x + 'px';
-                div.style.top = nota.y + 'px';
-                div.style.width = nota.width + 'px';
-                div.style.height = nota.height + 'px';
-                const fontSize = Math.min(14, nota.height * 0.2);
-                div.style.fontSize = fontSize + 'px';
-                div.textContent = nota.text;
-                div.setAttribute('data-id', nota.id);
-                div.setAttribute('data-page', num);
-
+        function renderHighlights(num) {
+            annotationsLayer.querySelectorAll('.highlight-mark').forEach(el => el.remove());
+            if (!highlightsData[num]) return;
+            highlightsData[num].forEach(h => {
+                const wrap = document.createElement('div');
+                wrap.className = 'highlight-mark';
+                wrap.style.left = h.x + 'px'; wrap.style.top = h.y + 'px';
+                wrap.style.width = h.width + 'px'; wrap.style.height = h.height + 'px';
+                (h.lines || []).forEach(line => {
+                    const rectDiv = document.createElement('div');
+                    rectDiv.className = 'highlight-rect';
+                    rectDiv.style.left = (line.x - h.x) + 'px';
+                    rectDiv.style.top = (line.y - h.y) + 'px';
+                    rectDiv.style.width = line.width + 'px';
+                    rectDiv.style.height = line.height + 'px';
+                    wrap.appendChild(rectDiv);
+                });
                 const delBtn = document.createElement('button');
-                delBtn.className = 'delete-vobo';
+                delBtn.className = 'delete-btn highlight-delete-btn';
                 delBtn.innerHTML = '<i class="fa-solid fa-xmark"></i>';
                 delBtn.onclick = (e) => {
                     e.stopPropagation();
-                    if (confirm('¿Eliminar esta Nota V°B°?')) {
+                    saveUndoState();
+                    highlightsData[num] = highlightsData[num].filter(x => x.id !== h.id);
+                    renderHighlights(num);
+                };
+                wrap.appendChild(delBtn);
+                annotationsLayer.appendChild(wrap);
+            });
+        }
+
+        let dragState = null;
+
+        function attachDragHandlers(element, resizeHandle, nota, page) {
+            element.onmousedown = function(e) {
+                if (e.target === resizeHandle || e.target.closest('.delete-nota-btn')) return;
+                e.preventDefault();
+                dragState = { type: 'move', element, nota, startX: e.clientX, startY: e.clientY, startLeft: nota.x, startTop: nota.y, page };
+                document.body.style.userSelect = 'none';
+            };
+            resizeHandle.onmousedown = function(e) {
+                e.preventDefault(); e.stopPropagation();
+                dragState = { type: 'resize', element, nota, startX: e.clientX, startY: e.clientY, startWidth: nota.width, startHeight: nota.height, page };
+                document.body.style.userSelect = 'none';
+            };
+        }
+
+        window.addEventListener('mousemove', function(e) {
+            if (!dragState) return;
+            const { type, element, nota } = dragState;
+            if (type === 'move') {
+                const dx = e.clientX - dragState.startX;
+                const dy = e.clientY - dragState.startY;
+                nota.x = Math.max(0, dragState.startLeft + dx);
+                nota.y = Math.max(0, dragState.startTop + dy);
+                element.style.left = nota.x + 'px';
+                element.style.top = nota.y + 'px';
+            } else if (type === 'resize') {
+                const dx = e.clientX - dragState.startX;
+                const dy = e.clientY - dragState.startY;
+                nota.width = Math.max(100, dragState.startWidth + dx);
+                nota.height = Math.max(40, dragState.startHeight + dy);
+                element.style.width = nota.width + 'px';
+                element.style.height = nota.height + 'px';
+                applyNotaTextFit(element, nota);
+            }
+        });
+
+        window.addEventListener('mouseup', function(e) {
+            if (!dragState) return;
+            const { type, element, nota, page, startX, startY } = dragState;
+            const movedDist = Math.hypot(e.clientX - startX, e.clientY - startY);
+            dragState = null;
+            document.body.style.userSelect = '';
+            if (type === 'resize') {
+                renderNotas(page);
+            } else if (type === 'move' && movedDist < 5) {
+                abrirEditorNota(element, nota, page);
+            }
+        });
+
+        function crearNotaBase(kind, textoInicial) {
+            if (!pdfDoc) { alert("Primero carga un PDF."); return null; }
+            saveUndoState();
+            if (!notasData[pageNum]) notasData[pageNum] = [];
+            const viewerWidth = annotationsLayer.clientWidth;
+            const viewerHeight = annotationsLayer.clientHeight;
+            const defaultWidth = 300, defaultHeight = 80;
+            const x = Math.max(0, (viewerWidth - defaultWidth) / 2);
+            const y = Math.max(0, (viewerHeight - defaultHeight) / 2);
+            const nueva = { id: Date.now(), kind, x, y, width: defaultWidth, height: defaultHeight, text: sanitizeText(textoInicial, true) };
+            notasData[pageNum].push(nueva);
+            renderNotas(pageNum);
+            return nueva;
+        }
+
+        function insertarNota() {
+            const nueva = crearNotaBase('nota', '');
+            if (!nueva) return;
+            showNotification('Nota insertada. Haz clic para editarla.', 'success');
+            const el = annotationsLayer.querySelector('[data-id="' + nueva.id + '"]');
+            if (el) setTimeout(() => abrirEditorNota(el, nueva, pageNum), 150);
+        }
+
+        function insertarNotaVobo() {
+            const nueva = crearNotaBase('vobo', TEXTO_NOTA_VOBO);
+            if (!nueva) return;
+            showNotification('Nota V°B° insertada.', 'success');
+        }
+
+        function renderNotas(num) {
+            annotationsLayer.querySelectorAll('.nota-item').forEach(el => el.remove());
+            if (!notasData[num]) return;
+            notasData[num].forEach(nota => {
+                const div = document.createElement('div');
+                div.className = 'nota-item';
+                div.dataset.kind = nota.kind;
+                div.setAttribute('data-id', nota.id);
+                div.setAttribute('data-page', num);
+
+                const textWrap = document.createElement('div');
+                textWrap.className = 'nota-item-text';
+                div.appendChild(textWrap);
+
+                const delBtn = document.createElement('button');
+                delBtn.className = 'delete-btn delete-nota-btn';
+                delBtn.innerHTML = '<i class="fa-solid fa-xmark"></i>';
+                delBtn.onclick = (e) => {
+                    e.stopPropagation();
+                    if (confirm('¿Eliminar esta nota?')) {
                         saveUndoState();
-                        notasVoboData[num] = notasVoboData[num].filter(n => n.id !== nota.id);
-                        renderNotasVobo(num);
+                        notasData[num] = notasData[num].filter(n => n.id !== nota.id);
+                        renderNotas(num);
                     }
                 };
                 div.appendChild(delBtn);
@@ -1339,101 +1281,102 @@
                 resizeHandle.className = 'resize-handle';
                 div.appendChild(resizeHandle);
 
-                // Doble clic para editar (se permite conservar saltos)
-                div.addEventListener('dblclick', function(e) {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    const nuevoTexto = prompt('Editar texto de la nota V°B°:', nota.text);
-                    if (nuevoTexto !== null) {
-                        nota.text = sanitizeText(nuevoTexto.trim(), true);
-                        renderNotasVobo(num);
-                    }
-                });
-
-                makeDraggableAndResizable(div, resizeHandle, nota, num);
+                attachDragHandlers(div, resizeHandle, nota, num);
                 annotationsLayer.appendChild(div);
+
+                applyNotaTextFit(div, nota);
             });
         }
 
-        function makeDraggableAndResizable(element, resizeHandle, nota, page) {
-            let startX, startY, startWidth, startHeight, startLeft, startTop;
-            let dragging = false;
-            let resizing = false;
-
-            element.addEventListener('mousedown', function(e) {
-                if (e.target === resizeHandle) return;
-                e.preventDefault();
-                dragging = true;
-                startX = e.clientX;
-                startY = e.clientY;
-                startLeft = nota.x;
-                startTop = nota.y;
-                document.body.style.userSelect = 'none';
+        function applyNotaTextFit(div, nota) {
+            const textWrap = div.querySelector('.nota-item-text');
+            const fit = fitTextToBox(nota.text || '', nota.width, nota.height, {
+                fontFamily: "'Helvetica Neue', Helvetica, Arial, sans-serif",
+                fontWeight: '700', minFontSize: 7, maxFontSize: 14, lineHeightMultiplier: 1.2, paddingPx: 8
             });
+            if (!fit.fits && fit.requiredHeight > nota.height) nota.height = Math.ceil(fit.requiredHeight);
+            nota.fontSize = fit.fontSize;
+            nota.wrappedLines = fit.lines;
+            nota.lineHeight = fit.lineHeight;
 
-            resizeHandle.addEventListener('mousedown', function(e) {
-                e.preventDefault();
-                e.stopPropagation();
-                resizing = true;
-                startX = e.clientX;
-                startY = e.clientY;
-                startWidth = nota.width;
-                startHeight = nota.height;
-                document.body.style.userSelect = 'none';
-            });
+            div.style.left = nota.x + 'px';
+            div.style.top = nota.y + 'px';
+            div.style.width = nota.width + 'px';
+            div.style.height = nota.height + 'px';
 
-            window.addEventListener('mousemove', function(e) {
-                if (dragging) {
-                    const dx = e.clientX - startX;
-                    const dy = e.clientY - startY;
-                    nota.x = Math.max(0, startLeft + dx);
-                    nota.y = Math.max(0, startTop + dy);
-                    element.style.left = nota.x + 'px';
-                    element.style.top = nota.y + 'px';
-                } else if (resizing) {
-                    const dx = e.clientX - startX;
-                    const dy = e.clientY - startY;
-                    nota.width = Math.max(100, startWidth + dx);
-                    nota.height = Math.max(40, startHeight + dy);
-                    element.style.width = nota.width + 'px';
-                    element.style.height = nota.height + 'px';
-                    const fontSize = Math.min(14, nota.height * 0.2);
-                    element.style.fontSize = fontSize + 'px';
-                }
-            });
-
-            window.addEventListener('mouseup', function() {
-                if (dragging || resizing) {
-                    dragging = false;
-                    resizing = false;
-                    document.body.style.userSelect = '';
-                }
+            textWrap.innerHTML = '';
+            textWrap.style.fontSize = fit.fontSize + 'px';
+            textWrap.style.lineHeight = fit.lineHeight + 'px';
+            fit.lines.forEach(line => {
+                const lineEl = document.createElement('div');
+                lineEl.className = 'label-line';
+                lineEl.textContent = line;
+                textWrap.appendChild(lineEl);
             });
         }
 
-        // ========== IMAGE UPLOAD ==========
-        function handleImageUpload(event) {
-            const file = event.target.files[0];
-            if (!file || !file.type.startsWith('image/')) return;
-            const reader = new FileReader();
-            reader.onload = function(e) {
-                uploadedImageBytes = new Uint8Array(e.target.result);
-                uploadedImageType = file.type;
-                imageStatus.style.display = 'inline-flex';
-                showNotification('Imagen cargada. Se adjuntará al final del PDF.', 'success');
-            };
-            reader.readAsArrayBuffer(file);
+        let notaEditContext = null;
+        const notaEditPanel = document.getElementById('notaEditPanel');
+        const notaEditTextarea = document.getElementById('notaEditTextarea');
+
+        function abrirEditorNota(element, nota, page) {
+            notaEditContext = { nota, page };
+            notaEditTextarea.value = nota.text;
+            notaEditPanel.style.display = 'flex';
+
+            const rect = element.getBoundingClientRect();
+            const panelWidth = 280, panelHeightEstimate = 220;
+            let left = rect.right + 12;
+            if (left + panelWidth > window.innerWidth - 10) left = rect.left - panelWidth - 12;
+            if (left < 10) left = 10;
+            let top = rect.top;
+            if (top + panelHeightEstimate > window.innerHeight - 10) top = Math.max(10, window.innerHeight - panelHeightEstimate - 10);
+            notaEditPanel.style.left = left + 'px';
+            notaEditPanel.style.top = top + 'px';
+
+            setTimeout(() => { notaEditTextarea.focus(); notaEditTextarea.select(); }, 50);
+            setTimeout(() => document.addEventListener('click', outsideNotaEditClick), 0);
         }
 
-        function removeImage() {
-            uploadedImageBytes = null;
-            uploadedImageType = null;
-            imageStatus.style.display = 'none';
-            document.getElementById('imageUpload').value = '';
-            showNotification('Imagen eliminada.', 'info');
+        function outsideNotaEditClick(e) {
+            if (!notaEditPanel.contains(e.target)) cerrarEditorNota();
         }
 
-        // ========== GENERACIÓN DE PDF (SANITIZADA) ==========
+        function cerrarEditorNota() {
+            notaEditPanel.style.display = 'none';
+            document.removeEventListener('click', outsideNotaEditClick);
+            notaEditContext = null;
+        }
+
+        document.getElementById('notaEditCancelBtn').addEventListener('click', cerrarEditorNota);
+        document.getElementById('notaEditSaveBtn').addEventListener('click', function() {
+            if (!notaEditContext) return;
+            const nuevoTexto = notaEditTextarea.value.trim();
+            if (nuevoTexto !== '') {
+                saveUndoState();
+                notaEditContext.nota.text = sanitizeText(nuevoTexto, true);
+                renderNotas(notaEditContext.page);
+            }
+            cerrarEditorNota();
+        });
+        notaEditTextarea.addEventListener('keydown', function(e) {
+            if (e.ctrlKey && e.key === 'Enter') { e.preventDefault(); document.getElementById('notaEditSaveBtn').click(); }
+            if (e.key === 'Escape') { e.preventDefault(); cerrarEditorNota(); }
+            e.stopPropagation();
+        });
+
+        // ============================================================
+        // FUNCIÓN DE EXPORTACIÓN PDF - CORREGIDA
+        // 
+        // PROBLEMA 1 CORREGIDO: El recuadro translúcido ahora se dibuja
+        // usando coordenadas POR LÍNEA (lineRects) en lugar de un solo
+        // bounding box grande, para no cubrir texto no seleccionado.
+        //
+        // PROBLEMA 2 CORREGIDO: Si el texto de reemplazo no cabe en el
+        // recuadro original, se EXPANDE automáticamente la altura del
+        // recuadro y se reajusta el texto para que NUNCA se corte ni
+        // se salga de los márgenes.
+        // ============================================================
         async function generarPDFModificado() {
             if (!pdfBytesOriginal) throw new Error("No hay PDF cargado.");
 
@@ -1452,14 +1395,35 @@
             if (elaboradoPor && pages.length > 0) {
                 const p = pages[0];
                 const h = p.getHeight();
-                const xA = 45, yA = h - 85, yF = h - 105;
+                const xA = 33, yA = h - 80, yF = h - 95;
                 p.drawRectangle({ x: xA-4, y: yA-4, width: fontBold.widthOfTextAtSize(elaboradoPor, 12) + 10, height: 20, color: rgb(0.95, 0.97, 1), opacity: 0.25 });
                 p.drawText(elaboradoPor, { x: xA, y: yA, size: 12, font: fontBold, color: rgb(0.1, 0.2, 0.4) });
                 p.drawRectangle({ x: xA-4, y: yF-4, width: fontBold.widthOfTextAtSize(fecha, 12) + 10, height: 20, color: rgb(0.95, 0.97, 1), opacity: 0.2 });
                 p.drawText(fecha, { x: xA, y: yF, size: 12, font: fontBold, color: rgb(0.1, 0.2, 0.4) });
             }
 
-            // ----- CORRECCIONES (AJUSTE AUTOMÁTICO) -----
+            // Resaltados
+            for (const [num, marks] of Object.entries(highlightsData)) {
+                if (!marks || !marks.length) continue;
+                const pageIndex = parseInt(num) - 1;
+                if (pageIndex >= pages.length) continue;
+                const page = pages[pageIndex];
+                const pageH = page.getHeight();
+                marks.forEach(h => {
+                    const lineasADibujar = (h.lines && h.lines.length) ? h.lines : [{ x: h.x, y: h.y, width: h.width, height: h.height }];
+                    lineasADibujar.forEach(line => {
+                        const xL = line.x / scale;
+                        const yLTop = pageH - (line.y / scale);
+                        const hgt = line.height / scale;
+                        const yBottom = yLTop - hgt;
+                        page.drawRectangle({ x: xL, y: yBottom, width: line.width / scale, height: hgt, color: rgb(0.8, 0, 0), opacity: 0.38 });
+                    });
+                });
+            }
+
+            // ============================================================
+            // CORRECCIONES - DOBLE CORRECCIÓN
+            // ============================================================
             for (const [num, marcas] of Object.entries(annotationsData)) {
                 if (!marcas || marcas.length === 0) continue;
                 const pageIndex = parseInt(num) - 1;
@@ -1470,193 +1434,199 @@
                 marcas.forEach(m => {
                     const xR = m.x / scale;
                     const wR = m.width / scale;
-                    const hR = m.height / scale;
+                    let hR = m.height / scale;
                     const yTop = pageH - (m.y / scale);
-                    const yBottom = yTop - hR;
+                    let yBottom = yTop - hR;
 
-                    // Líneas de tachado
+                    // ============================================
+                    // CALCULAR TAMAÑO NECESARIO PARA EL TEXTO NUEVO
+                    // (ligeramente más grande: x1.15)
+                    // ============================================
+                    const pdfFontSizeOriginal = (m.fontSize || 10) / scale;
+                    const pdfFontSize = pdfFontSizeOriginal * 1.15;
+                    const pdfLineHeight = pdfFontSize * 1.25;
+                    const paddingPdf = 4 / scale;
+                    const usableWidthPdf = Math.max(1, wR - paddingPdf * 2);
+
+                    // Usar el mismo font que usaremos para dibujar
+                    const testFont = fontBold;
+                    const words = (m.newText || '').split(' ').filter(w => w.length > 0);
+                    let wrappedLines = [];
+                    if (words.length > 0) {
+                        let currentLine = words[0];
+                        for (let i = 1; i < words.length; i++) {
+                            const testLine = currentLine + ' ' + words[i];
+                            if (testFont.widthOfTextAtSize(testLine, pdfFontSize) <= usableWidthPdf) {
+                                currentLine = testLine;
+                            } else {
+                                wrappedLines.push(currentLine);
+                                currentLine = words[i];
+                            }
+                        }
+                        wrappedLines.push(currentLine);
+                    }
+
+                    const requiredHeightPdf = wrappedLines.length * pdfLineHeight + paddingPdf * 2;
+
+                    // SI EL TEXTO NO CABE, EXPANDIR EL RECUADRO HACIA ABAJO
+                    if (requiredHeightPdf > hR) {
+                        hR = requiredHeightPdf;
+                        yBottom = yTop - hR;
+                        // Actualizar también la altura en píxeles para la vista previa
+                        m.height = Math.ceil(hR * scale);
+                    }
+
+                    // ============================================
+                    // CAPA 2: LÍNEAS ROJAS DE TACHADO (SOLO sobre
+                    // las líneas SELECCIONADAS, usando lineRects)
+                    // ============================================
                     if (m.lines && m.lines.length > 0) {
                         m.lines.forEach(line => {
                             const xL = line.x / scale;
                             const yLTop = pageH - (line.y / scale);
-                            const yCenter = yLTop - (line.height / 2);
+                            const yCenter = yLTop - (line.height / (2 * scale));
                             page.drawLine({
                                 start: { x: xL, y: yCenter },
                                 end: { x: xL + (line.width / scale), y: yCenter },
                                 thickness: 1.5,
-                                color: rgb(1, 0, 0)
+                                color: rgb(0.73, 0, 0),
+                                opacity: 0.85
+                            });
+                        });
+                    }
+
+                    // ============================================
+                    // CAPA 3: RECUADROS TRANSLÚCIDOS POR LÍNEA
+                    // Se dibuja un rectángulo individual para CADA
+                    // línea seleccionada (lineRects), no un bounding
+                    // box grande que abarque texto no seleccionado.
+                    // ============================================
+                    if (m.lines && m.lines.length > 0) {
+                        m.lines.forEach(line => {
+                            const xL = line.x / scale;
+                            const yLTop = pageH - (line.y / scale);
+                            const hLine = line.height / scale;
+                            const yLBottom = yLTop - hLine;
+                            page.drawRectangle({
+                                x: xL,
+                                y: yLBottom,
+                                width: line.width / scale,
+                                height: hLine,
+                                color: rgb(0.94, 0.97, 0.94),
+                                opacity: 0.72
                             });
                         });
                     } else {
-                        const yCenter = yTop - (hR / 2);
-                        page.drawLine({ start: { x: xR, y: yCenter }, end: { x: xR + wR, y: yCenter }, thickness: 1.5, color: rgb(1, 0, 0) });
+                        // Fallback: un solo rectángulo
+                        page.drawRectangle({
+                            x: xR,
+                            y: yBottom,
+                            width: wR,
+                            height: hR,
+                            color: rgb(0.94, 0.97, 0.94),
+                            opacity: 0.72
+                        });
                     }
 
-                    // Texto nuevo (ya sin \n)
-                    const maxWidth = wR - 4;
-                    const availableHeight = hR - 4;
+                    // ============================================
+                    // CAPA 4: TEXTO NUEVO DE REEMPLAZO
+                    // Centrado verticalmente en el recuadro expandido
+                    // ============================================
+                    const totalNewTextHeight = wrappedLines.length * pdfLineHeight;
+                    let yText = yBottom + (hR + totalNewTextHeight) / 2 - pdfFontSize * 0.8;
 
-                    function getLines(fontSize) {
-                        const words = m.newText.split(' ');
-                        const lines = [];
-                        let currentLine = '';
-                        for (const word of words) {
-                            const testLine = currentLine ? currentLine + ' ' + word : word;
-                            if (font.widthOfTextAtSize(testLine, fontSize) < maxWidth || currentLine === '') {
-                                currentLine = testLine;
-                            } else {
-                                lines.push(currentLine);
-                                currentLine = word;
-                            }
-                        }
-                        if (currentLine) lines.push(currentLine);
-                        return lines;
-                    }
-
-                    let fontSize = hR * 0.8;
-                    const minFontSize = 4;
-                    let bestFontSize = minFontSize;
-                    let bestLines = [];
-
-                    while (fontSize >= minFontSize) {
-                        const lines = getLines(fontSize);
-                        const lineHeight = fontSize * 1.2;
-                        const totalHeight = lines.length * lineHeight;
-                        if (totalHeight <= availableHeight) {
-                            bestFontSize = fontSize;
-                            bestLines = lines;
-                            break;
-                        }
-                        fontSize -= 0.5;
-                    }
-
-                    if (bestLines.length === 0) {
-                        bestFontSize = minFontSize;
-                        bestLines = getLines(minFontSize);
-                        const lineHeight = bestFontSize * 1.2;
-                        const maxLines = Math.floor(availableHeight / lineHeight);
-                        bestLines = bestLines.slice(0, maxLines);
-                    }
-
-                    page.drawRectangle({
-                        x: xR - 1,
-                        y: yBottom,
-                        width: wR + 2,
-                        height: hR,
-                        color: rgb(1, 1, 1),
-                        opacity: 0.65
+                    wrappedLines.forEach(line => {
+                        if (!line) { yText -= pdfLineHeight; return; }
+                        page.drawText(line, {
+                            x: xR + paddingPdf,
+                            y: yText,
+                            size: pdfFontSize,
+                            font: fontBold,
+                            color: rgb(0.024, 0.373, 0.275),
+                            opacity: 0.95
+                        });
+                        yText -= pdfLineHeight;
                     });
 
-                    const lineHeight = bestFontSize * 1.2;
-                    let yText = yBottom + hR - bestFontSize - 2;
-                    for (const line of bestLines) {
-                        page.drawText(line, {
-                            x: xR + 2,
-                            y: yText,
-                            size: bestFontSize,
-                            font: font,
-                            color: rgb(0, 0.45, 0)
-                        });
-                        yText -= lineHeight;
-                    }
+                    // Guardar líneas ajustadas para futura referencia
+                    m._pdfWrappedLines = wrappedLines;
+                    m._pdfFontSize = pdfFontSize;
                 });
             }
 
-            // ========== NOTAS V°B° ==========
-            for (const [num, notas] of Object.entries(notasVoboData)) {
-                if (!notas || notas.length === 0) continue;
+            // ============================================================
+            // NOTAS: SIN BORDE VISIBLE, SOLO TEXTO
+            // ============================================================
+            const KIND_COLORS = {
+                vobo: { text: rgb(0.024, 0.373, 0.275) },
+                nota: { text: rgb(0.02, 0.29, 0.62) }
+            };
+            for (const [num, notas] of Object.entries(notasData)) {
+                if (!notas || !notas.length) continue;
                 const pageIndex = parseInt(num) - 1;
                 if (pageIndex >= pages.length) continue;
                 const page = pages[pageIndex];
                 const pageH = page.getHeight();
 
                 notas.forEach(nota => {
+                    const colors = KIND_COLORS[nota.kind] || KIND_COLORS.nota;
                     const xN = nota.x / scale;
                     const yN = pageH - (nota.y / scale);
                     const wN = nota.width / scale;
-                    const hN = nota.height / scale;
+                    let hN = nota.height / scale;
                     const yBottom = yN - hN;
 
-                    const maxWidth = wN - 4;
-                    const availableHeight = hN - 4;
+                    const pdfFontSize = (nota.fontSize || 10) / scale;
+                    const pdfLineHeight = (nota.lineHeight || pdfFontSize * 1.2) / scale;
+                    const paddingNota = 4 / scale;
+                    const usableW = Math.max(1, wN - paddingNota * 2);
 
-                    function getLines(fontSize) {
-                        // texto ya saneado, dividir por \n y luego por palabras
-                        const paragraphs = nota.text.split('\n');
-                        const lines = [];
-                        paragraphs.forEach(para => {
-                            const safePara = para.replace(/\n/g, ' '); // redundante pero seguro
-                            const words = safePara.split(' ');
-                            let currentLine = '';
-                            for (const word of words) {
-                                const testLine = currentLine ? currentLine + ' ' + word : word;
-                                if (fontBold.widthOfTextAtSize(testLine, fontSize) < maxWidth || currentLine === '') {
-                                    currentLine = testLine;
-                                } else {
-                                    lines.push(currentLine);
-                                    currentLine = word;
-                                }
+                    const lines = [];
+                    const words = (nota.text || '').split(' ').filter(w => w.length > 0);
+                    if (words.length > 0) {
+                        let currentLine = words[0];
+                        for (let i = 1; i < words.length; i++) {
+                            const testLine = currentLine + ' ' + words[i];
+                            if (fontBold.widthOfTextAtSize(testLine, pdfFontSize) <= usableW) {
+                                currentLine = testLine;
+                            } else {
+                                lines.push(currentLine);
+                                currentLine = words[i];
                             }
-                            if (currentLine) lines.push(currentLine);
-                        });
-                        return lines;
-                    }
-
-                    let fontSize = 12;
-                    const minFontSize = 4;
-                    let bestFontSize = minFontSize;
-                    let bestLines = [];
-
-                    while (fontSize >= minFontSize) {
-                        const lines = getLines(fontSize);
-                        const lineHeight = fontSize * 1.2;
-                        const totalHeight = lines.length * lineHeight;
-                        if (totalHeight <= availableHeight) {
-                            bestFontSize = fontSize;
-                            bestLines = lines;
-                            break;
                         }
-                        fontSize -= 0.5;
+                        lines.push(currentLine);
                     }
+                    const totalTextHeight = lines.length * pdfLineHeight;
+                    let yText = yBottom + (hN + totalTextHeight) / 2 - pdfFontSize * 0.85;
 
-                    if (bestLines.length === 0) {
-                        bestFontSize = minFontSize;
-                        bestLines = getLines(minFontSize);
-                        const lineHeight = bestFontSize * 1.2;
-                        const maxLines = Math.floor(availableHeight / lineHeight);
-                        bestLines = bestLines.slice(0, maxLines);
-                    }
-
-                    const lineHeight = bestFontSize * 1.2;
-                    let yText = yBottom + hN - bestFontSize - 2;
-                    for (const line of bestLines) {
+                    lines.forEach(line => {
+                        if (!line) { yText -= pdfLineHeight; return; }
+                        const lineWidth = fontBold.widthOfTextAtSize(line, pdfFontSize);
+                        const xCentered = xN + Math.max(0, (wN - lineWidth) / 2);
                         page.drawText(line, {
-                            x: xN + 2,
+                            x: xCentered,
                             y: yText,
-                            size: bestFontSize,
+                            size: pdfFontSize,
                             font: fontBold,
-                            color: rgb(0.024, 0.373, 0.275)
+                            color: colors.text,
+                            opacity: 0.9
                         });
-                        yText -= lineHeight;
-                    }
+                        yText -= pdfLineHeight;
+                    });
                 });
             }
 
-            // ========== NOTAS ADICIONALES ==========
+            // Notas adicionales
             if (notasAdicionales) {
                 const fsN = 11, lh = 16, mg = 50, uw = 595.28 - mg * 2;
                 const lines = [];
-                // Sanitizar también las notas adicionales (sin saltos)
                 const textoNotas = sanitizeText(notasAdicionales, false);
                 textoNotas.split(' ').forEach(word => {
                     if (!lines.length) { lines.push(word); }
                     else {
                         const lastLine = lines[lines.length-1];
-                        if (font.widthOfTextAtSize(lastLine + ' ' + word, fsN) < uw) {
-                            lines[lines.length-1] = lastLine + ' ' + word;
-                        } else {
-                            lines.push(word);
-                        }
+                        if (font.widthOfTextAtSize(lastLine + ' ' + word, fsN) < uw) lines[lines.length-1] = lastLine + ' ' + word;
+                        else lines.push(word);
                     }
                 });
                 const makePage = (first) => {
@@ -1673,24 +1643,23 @@
                 });
             }
 
-            // ========== IMAGEN ADJUNTA ==========
-            if (uploadedImageBytes) {
+            // Imágenes
+            for (const img of uploadedImages) {
                 try {
-                    let image;
-                    if (uploadedImageType === 'image/png') image = await doc.embedPng(uploadedImageBytes);
-                    else if (uploadedImageType === 'image/jpeg' || uploadedImageType === 'image/jpg') image = await doc.embedJpg(uploadedImageBytes);
-                    else { try { image = await doc.embedPng(uploadedImageBytes); } catch { image = await doc.embedJpg(uploadedImageBytes); } }
+                    let embedded;
+                    if (img.type === 'image/png') embedded = await doc.embedPng(img.bytes);
+                    else if (img.type === 'image/jpeg' || img.type === 'image/jpg') embedded = await doc.embedJpg(img.bytes);
+                    else { try { embedded = await doc.embedPng(img.bytes); } catch { embedded = await doc.embedJpg(img.bytes); } }
                     const imgPage = doc.addPage([595.28, 842.89]);
-                    const dims = image.scaleToFit(500, 700);
-                    imgPage.drawImage(image, { x: (595.28 - dims.width) / 2, y: (842.89 - dims.height) / 2, width: dims.width, height: dims.height });
-                } catch (imgError) { console.warn("Error al incrustar imagen:", imgError); }
+                    const dims = embedded.scaleToFit(500, 700);
+                    imgPage.drawImage(embedded, { x: (595.28 - dims.width) / 2, y: (842.89 - dims.height) / 2, width: dims.width, height: dims.height });
+                } catch (imgError) { console.warn("Error al incrustar imagen:", img.name, imgError); }
             }
 
             const bytes = await doc.save();
             return bytes;
         }
 
-        // ========== SAVE ==========
         function verificarAutorYGuardar() {
             if (txtElaborado.value.trim() === "") { confirmAuthorModal.style.display = 'flex'; }
             else { guardarPDFEnPC(); }
@@ -1733,21 +1702,9 @@
                 const url = URL.createObjectURL(blob);
                 previewIframe.src = url;
                 previewModalOverlay.style.display = 'flex';
-
-                const cleanUrl = () => {
-                    URL.revokeObjectURL(url);
-                    previewIframe.src = '';
-                };
-                closePreviewBtn.onclick = () => {
-                    previewModalOverlay.style.display = 'none';
-                    cleanUrl();
-                };
-                previewModalOverlay.onclick = (e) => {
-                    if (e.target === previewModalOverlay) {
-                        previewModalOverlay.style.display = 'none';
-                        cleanUrl();
-                    }
-                };
+                const cleanUrl = () => { URL.revokeObjectURL(url); previewIframe.src = ''; };
+                closePreviewBtn.onclick = () => { previewModalOverlay.style.display = 'none'; cleanUrl(); };
+                previewModalOverlay.onclick = (e) => { if (e.target === previewModalOverlay) { previewModalOverlay.style.display = 'none'; cleanUrl(); } };
             } catch(e) {
                 console.error(e);
                 alert("Error al generar la vista previa: " + e.message);
@@ -1756,11 +1713,16 @@
 
         function showNotification(msg, type) {
             const n = document.createElement('div');
-            n.style.cssText = `position:fixed;top:20px;right:20px;background:${type==='success'?'rgba(16,185,129,0.85)':type==='info'?'rgba(99,102,241,0.85)':'rgba(239,68,68,0.85)'};backdrop-filter:blur(10px);color:white;padding:12px 20px;border-radius:50px;font-weight:600;box-shadow:0 10px 20px rgba(0,0,0,0.2),inset 0 1px 0 rgba(255,255,255,0.4);z-index:100000;animation:slideUp .3s ease;font-family:'Inter',sans-serif;font-size:13px;display:flex;align-items:center;gap:8px;border:1px solid rgba(255,255,255,0.5);`;
+            const bg = type === 'success' ? 'rgba(16,126,62,0.95)' : type === 'info' ? 'rgba(10,110,209,0.95)' : 'rgba(187,0,0,0.95)';
+            n.style.cssText = `position:fixed;top:20px;right:20px;background:${bg};color:white;padding:12px 20px;border-radius:10px;font-weight:600;box-shadow:0 10px 24px rgba(0,0,0,0.4);z-index:100000;animation:slideDown .25s ease;font-family:'Inter',sans-serif;font-size:13px;display:flex;align-items:center;gap:8px;border:1px solid rgba(255,255,255,0.15);`;
             n.innerHTML = `<i class="fa-solid fa-${type==='success'?'check-circle':type==='info'?'info-circle':'exclamation-circle'}"></i> ${msg}`;
             document.body.appendChild(n);
-            setTimeout(() => { n.style.opacity='0'; n.style.transition='opacity 0.3s'; setTimeout(()=>n.remove(),300); }, 3000);
+            setTimeout(() => { n.style.opacity = '0'; n.style.transition = 'opacity 0.25s'; setTimeout(() => n.remove(), 250); }, 3000);
         }
+
+        const styleSheet = document.createElement('style');
+        styleSheet.textContent = `@keyframes slideDown { from { transform: translateY(-14px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }`;
+        document.head.appendChild(styleSheet);
     </script>
 </body>
 </html>
