@@ -170,6 +170,8 @@
         }
         .btn:hover { filter: brightness(1.15); }
         .btn:active { transform: scale(0.97); }
+        .btn:disabled { opacity: 0.35; cursor: not-allowed; filter: none; transform: none; }
+        #zoom_indicator { min-width: 42px; }
         .btn-nav { background: var(--bg-elevated-2); padding: 7px 12px; font-size: 13px; min-width: 32px; justify-content: center; }
         .btn-nav:hover { background: var(--accent-blue); border-color: var(--accent-blue-dark); }
         .btn-replace { background: var(--accent-orange); color: #fff; border-color: var(--accent-orange-dark); }
@@ -291,7 +293,26 @@
         .preview-close:hover { background: var(--accent-red); }
         .preview-iframe { flex: 1; width: 100%; border: none; }
 
+        .empty-state {
+            max-width: 420px; margin: 60px auto; text-align: center;
+            color: var(--text-secondary); padding: 40px 24px;
+            border: 1.5px dashed var(--border-strong); border-radius: var(--radius-lg);
+            background: rgba(255,255,255,0.02);
+        }
+        .empty-state i { font-size: 42px; color: var(--accent-blue); margin-bottom: 14px; display: block; }
+        .empty-state h2 { color: var(--text-primary); font-size: 18px; font-weight: 700; margin-bottom: 8px; }
+        .empty-state p { font-size: 13px; line-height: 1.5; }
+        .empty-state.hidden { display: none; }
+
+        .viewer-loading {
+            display: none; position: absolute; left: 0; top: 0; right: 0; bottom: 0;
+            background: rgba(255,255,255,0.85); z-index: 10; align-items: center; justify-content: center;
+            font-size: 34px; color: var(--accent-blue);
+        }
+        .viewer-loading.active { display: flex; }
+
         .pdf-wrapper { display: flex; justify-content: center; margin-top: 8px; position: relative; z-index: 1; }
+        .pdf-wrapper.hidden { display: none; }
         .pdf-inner-container { position: relative; display: inline-block; }
         #pdf-viewer {
             position: relative; box-shadow: 0 20px 45px rgba(0,0,0,0.5);
@@ -300,9 +321,9 @@
         }
         #the-canvas { display: block; }
 
-        #text-layer { position: absolute; left: 0; top: 0; right: 0; bottom: 0; overflow: hidden; opacity: 0.45; line-height: 1; z-index: 2; }
+        #text-layer { position: absolute; left: 0; top: 0; right: 0; bottom: 0; overflow: hidden; line-height: 1; z-index: 2; }
         #text-layer > span { color: transparent; position: absolute; white-space: pre; cursor: text; transform-origin: 0% 0%; user-select: text; -webkit-user-select: text; }
-        #text-layer ::selection { background: rgba(10,110,209,0.5) !important; color: rgba(0,0,0,0.08) !important; border-radius: 3px; }
+        #text-layer ::selection { background: rgba(10,110,209,0.35) !important; color: transparent !important; }
 
         #annotations-layer { position: absolute; left: 0; top: 0; right: 0; bottom: 0; pointer-events: none; z-index: 3; }
 
@@ -494,7 +515,7 @@
 
     <div class="toolbar-container" id="toolbarContainer">
         <div class="toolbar maximized" id="mainToolbar">
-            <button class="toolbar-toggle" id="toolbarToggle" title="Minimizar/Maximizar"><i class="fa-solid fa-chevron-up"></i></button>
+            <button class="toolbar-toggle" id="toolbarToggle" title="Minimizar/Maximizar" aria-label="Minimizar o maximizar la barra de herramientas"><i class="fa-solid fa-chevron-up"></i></button>
             <div class="toolbar-content">
                 <div class="toolbar-row">
                     <div class="upload-section">
@@ -513,9 +534,14 @@
                 </div>
                 <div class="toolbar-row">
                     <div class="page-controls">
-                        <button class="btn btn-nav" id="prev" onclick="onPrevPage()"><i class="fa-solid fa-chevron-left"></i></button>
+                        <button class="btn btn-nav" id="prev" onclick="onPrevPage()" aria-label="Página anterior" title="Página anterior"><i class="fa-solid fa-chevron-left"></i></button>
                         <span>📄 <span class="page-indicator" id="page_num">0</span>/<span id="page_count">0</span></span>
-                        <button class="btn btn-nav" id="next" onclick="onNextPage()"><i class="fa-solid fa-chevron-right"></i></button>
+                        <button class="btn btn-nav" id="next" onclick="onNextPage()" aria-label="Página siguiente" title="Página siguiente"><i class="fa-solid fa-chevron-right"></i></button>
+                    </div>
+                    <div class="page-controls" id="zoomControls">
+                        <button class="btn btn-nav" id="zoomOut" onclick="cambiarZoom(-0.15)" aria-label="Alejar" title="Alejar (Zoom -)"><i class="fa-solid fa-magnifying-glass-minus"></i></button>
+                        <span id="zoom_indicator">100%</span>
+                        <button class="btn btn-nav" id="zoomIn" onclick="cambiarZoom(0.15)" aria-label="Acercar" title="Acercar (Zoom +)"><i class="fa-solid fa-magnifying-glass-plus"></i></button>
                     </div>
                     <button class="btn btn-replace" onmousedown="event.preventDefault(); aplicarCorreccion()"><i class="fa-solid fa-pen-to-square"></i> Reemplazar</button>
                     <button class="btn btn-highlight" onmousedown="event.preventDefault(); aplicarResaltado()"><i class="fa-solid fa-highlighter"></i> Resaltar</button>
@@ -525,6 +551,8 @@
                     <button class="btn btn-vobo" onclick="insertarNotaVobo()"><i class="fa-solid fa-stamp"></i> V°B°</button>
                     <button class="btn btn-image" onclick="document.getElementById('imageUpload').click()"><i class="fa-solid fa-images"></i> Imágenes</button>
                     <input type="file" id="imageUpload" accept="image/*" multiple style="display:none" onchange="handleImageUpload(event)">
+                    <button class="btn btn-cancel" id="btnUndo" onclick="undo()" disabled aria-label="Deshacer" title="Deshacer (Ctrl+Z)"><i class="fa-solid fa-rotate-left"></i></button>
+                    <button class="btn btn-cancel" id="btnRedo" onclick="redo()" disabled aria-label="Rehacer" title="Rehacer (Ctrl+Y)"><i class="fa-solid fa-rotate-right"></i></button>
                     <button class="btn btn-save" id="btnGuardar" onclick="verificarAutorYGuardar()" style="display:none;"><i class="fa-solid fa-floppy-disk"></i> Guardar</button>
                 </div>
                 <div class="toolbar-tip"><i class="fa-solid fa-lightbulb"></i><span><strong>Tip:</strong> Selecciona texto → <strong>Reemplazar</strong>/<strong>Supr</strong> o <strong>Resaltar</strong>. Clic simple en una nota para editarla. <strong>Ctrl+Z</strong> deshacer.</span></div>
@@ -536,7 +564,7 @@
         <div class="preview-modal">
             <div class="preview-header">
                 <span><i class="fa-solid fa-eye"></i> Vista previa del PDF modificado</span>
-                <button class="preview-close" id="closePreviewBtn"><i class="fa-solid fa-xmark"></i></button>
+                <button class="preview-close" id="closePreviewBtn" aria-label="Cerrar vista previa" title="Cerrar"><i class="fa-solid fa-xmark"></i></button>
             </div>
             <iframe class="preview-iframe" id="previewIframe" src=""></iframe>
         </div>
@@ -544,7 +572,7 @@
 
     <div class="modal-overlay" id="replacementModal">
         <div class="modal-content">
-            <div class="modal-header"><h3 id="modalTitle"><i class="fa-solid fa-pen-to-square"></i> Reemplazar Texto</h3><button class="close-modal" id="closeModalBtn"><i class="fa-solid fa-xmark"></i></button></div>
+            <div class="modal-header"><h3 id="modalTitle"><i class="fa-solid fa-pen-to-square"></i> Reemplazar Texto</h3><button class="close-modal" id="closeModalBtn" aria-label="Cerrar" title="Cerrar"><i class="fa-solid fa-xmark"></i></button></div>
             <div class="modal-body">
                 <div class="text-comparison">
                     <div class="text-box original"><label><i class="fa-solid fa-xmark-circle"></i> Texto Original:</label><div class="text-display" id="originalTextDisplay"></div></div>
@@ -582,9 +610,16 @@
         </div>
     </div>
 
-    <div class="pdf-wrapper">
+    <div class="empty-state" id="emptyState">
+        <i class="fa-solid fa-file-pdf"></i>
+        <h2>Sube un PDF para comenzar</h2>
+        <p>Arrastra un archivo a esta ventana o usa el botón <strong>PDF</strong> de la barra superior.</p>
+    </div>
+
+    <div class="pdf-wrapper hidden">
         <div class="pdf-inner-container" id="pdfInnerContainer">
             <div id="pdf-viewer">
+                <div class="viewer-loading" id="viewerLoading"><i class="fa-solid fa-spinner fa-spin"></i></div>
                 <canvas id="the-canvas"></canvas>
                 <div id="text-layer"></div>
                 <div id="annotations-layer"></div>
@@ -593,22 +628,22 @@
     </div>
 
     <div class="notes-widget minimized" id="seccionNotas">
-        <div class="notes-icon" id="notesIcon">📝</div>
+        <div class="notes-icon" id="notesIcon" role="button" tabindex="0" aria-label="Abrir notas adicionales">📝</div>
         <div class="notes-content">
-            <div class="notes-header"><span><i class="fa-solid fa-note-sticky"></i> Notas Adicionales</span><button class="close-notes" id="btnCloseNotes" title="Minimizar"><i class="fa-solid fa-xmark"></i></button></div>
+            <div class="notes-header"><span><i class="fa-solid fa-note-sticky"></i> Notas Adicionales</span><button class="close-notes" id="btnCloseNotes" title="Minimizar" aria-label="Minimizar notas"><i class="fa-solid fa-xmark"></i></button></div>
             <textarea id="txtNotasAdicionales" placeholder="Escribe aquí cualquier comentario..."></textarea>
         </div>
     </div>
 
     <div class="images-widget" id="imagesWidget">
-        <div class="images-widget-fab" id="imagesFab">
+        <div class="images-widget-fab" id="imagesFab" role="button" tabindex="0" aria-label="Abrir panel de imágenes adjuntas">
             <i class="fa-solid fa-images"></i>
             <span class="images-count-badge" id="imagesCountBadge">0</span>
         </div>
         <div class="images-panel">
             <div class="images-panel-header">
                 <span><i class="fa-solid fa-images"></i> Imágenes adjuntas</span>
-                <button class="close-notes" id="btnCloseImagesPanel"><i class="fa-solid fa-xmark"></i></button>
+                <button class="close-notes" id="btnCloseImagesPanel" aria-label="Cerrar panel de imágenes"><i class="fa-solid fa-xmark"></i></button>
             </div>
             <div class="images-grid" id="imagesGrid"></div>
             <p class="images-empty-hint" id="imagesEmptyHint">Aún no hay imágenes.</p>
@@ -696,6 +731,7 @@
         let nombreArchivoOriginal = "documento.pdf";
 
         let undoStack = [];
+        let redoStack = [];
         const MAX_UNDO = 30;
 
         let uploadedImages = [];
@@ -762,6 +798,7 @@
         function openNotesWidget() { notesWidget.classList.remove('minimized'); notesWidget.classList.add('maximized'); txtNotasAdicionales.focus(); }
         function closeNotesWidget() { notesWidget.classList.remove('maximized'); notesWidget.classList.add('minimized'); }
         notesIcon.addEventListener('click', (e) => { e.stopPropagation(); if (notesWidget.classList.contains('minimized')) openNotesWidget(); });
+        notesIcon.addEventListener('keydown', (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); notesIcon.click(); } });
         btnCloseNotes.addEventListener('click', (e) => { e.stopPropagation(); closeNotesWidget(); });
         document.addEventListener('click', (e) => { if (notesWidget.classList.contains('maximized') && !notesWidget.contains(e.target)) closeNotesWidget(); });
 
@@ -772,6 +809,7 @@
         const imagesEmptyHint = document.getElementById('imagesEmptyHint');
 
         imagesFab.addEventListener('click', (e) => { e.stopPropagation(); imagesWidget.classList.toggle('open'); });
+        imagesFab.addEventListener('keydown', (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); imagesFab.click(); } });
         document.getElementById('btnCloseImagesPanel').addEventListener('click', (e) => { e.stopPropagation(); imagesWidget.classList.remove('open'); });
         document.addEventListener('click', (e) => { if (imagesWidget.classList.contains('open') && !imagesWidget.contains(e.target)) imagesWidget.classList.remove('open'); });
 
@@ -829,12 +867,35 @@
             loadPDF(file);
         });
 
+        function ocultarEstadoVacio() {
+            document.getElementById('emptyState').classList.add('hidden');
+            document.querySelector('.pdf-wrapper').classList.remove('hidden');
+        }
+
+        function mostrarEstadoVacio() {
+            document.getElementById('emptyState').classList.remove('hidden');
+            document.querySelector('.pdf-wrapper').classList.add('hidden');
+        }
+
+        function mostrarCargando(activo) {
+            document.getElementById('viewerLoading').classList.toggle('active', !!activo);
+        }
+
         async function loadPDF(file) {
-            nombreArchivoOriginal = file.name;
-            document.getElementById('fileNameDisplay').textContent = `📎 ${file.name}`;
-            const arrayBuffer = await file.arrayBuffer();
-            pdfBytesOriginal = new Uint8Array(arrayBuffer);
-            pdfjsLib.getDocument(pdfBytesOriginal).promise.then(function(pdfDoc_) {
+            if (!file || file.type !== 'application/pdf') {
+                showNotification('El archivo debe ser un PDF.', 'error');
+                return;
+            }
+            mostrarCargando(true);
+            try {
+                const arrayBuffer = await file.arrayBuffer();
+                const bytes = new Uint8Array(arrayBuffer);
+                const pdfDoc_ = await pdfjsLib.getDocument(bytes).promise;
+
+                // Solo confirmamos el cambio de documento si pdf.js pudo abrirlo
+                nombreArchivoOriginal = file.name;
+                document.getElementById('fileNameDisplay').textContent = `📎 ${file.name}`;
+                pdfBytesOriginal = bytes;
                 pdfDoc = pdfDoc_;
                 document.getElementById('page_count').textContent = pdfDoc.numPages;
                 document.getElementById('btnGuardar').style.display = 'inline-flex';
@@ -846,15 +907,25 @@
                 notasData = {};
                 highlightsData = {};
                 undoStack = [];
+                redoStack = [];
+                actualizarBotonesHistorial();
                 pageNum = 1;
                 scale = 1.5;
-                renderPage(pageNum);
-            });
+                actualizarIndicadorZoom();
+                ocultarEstadoVacio();
+                await renderPage(pageNum);
+                showNotification(`PDF cargado: ${pdfDoc.numPages} página(s).`, 'success');
+            } catch (err) {
+                console.error('Error al cargar el PDF:', err);
+                mostrarCargando(false);
+                showNotification('No se pudo abrir el PDF. Verifica que el archivo no esté dañado o protegido.', 'error');
+            }
         }
 
         function renderPage(num) {
             return new Promise((resolve) => {
                 pageRendering = true;
+                mostrarCargando(true);
                 pdfDoc.getPage(num).then(function(page) {
                     const viewport = page.getViewport({ scale: scale });
                     canvas.height = viewport.height;
@@ -875,6 +946,7 @@
                         renderNotas(num);
                         renderHighlights(num);
                         pageRendering = false;
+                        mostrarCargando(false);
                         if (pageNumPending !== null) { renderPage(pageNumPending); pageNumPending = null; }
                         resolve();
                     });
@@ -884,20 +956,57 @@
         }
 
         function queueRenderPage(num) { if (pageRendering) pageNumPending = num; else renderPage(num); }
-        function onPrevPage() { if (pageNum <= 1) return; pageNum--; queueRenderPage(pageNum); }
-        function onNextPage() { if (pageNum >= pdfDoc.numPages) return; pageNum++; queueRenderPage(pageNum); }
+        function onPrevPage() { if (!pdfDoc || pageNum <= 1) return; pageNum--; queueRenderPage(pageNum); }
+        function onNextPage() { if (!pdfDoc || pageNum >= pdfDoc.numPages) return; pageNum++; queueRenderPage(pageNum); }
 
-        function saveUndoState() {
-            undoStack.push({
+        const ZOOM_MIN = 0.75, ZOOM_MAX = 3;
+
+        function actualizarIndicadorZoom() {
+            const el = document.getElementById('zoom_indicator');
+            if (el) el.textContent = Math.round((scale / 1.5) * 100) + '%';
+        }
+
+        function cambiarZoom(delta) {
+            if (!pdfDoc) return;
+            const nuevaEscala = Math.min(ZOOM_MAX, Math.max(ZOOM_MIN, +(scale + delta).toFixed(2)));
+            if (nuevaEscala === scale) return;
+
+            // Reescalar todas las anotaciones/notas/resaltados guardados (en píxeles de
+            // canvas) al nuevo factor de zoom, para que sigan alineados con el texto.
+            const factor = nuevaEscala / scale;
+            const reescalarCaja = (obj) => {
+                obj.x *= factor; obj.y *= factor; obj.width *= factor; obj.height *= factor;
+                if (obj.fontSize) obj.fontSize *= factor;
+                if (obj.lineHeight) obj.lineHeight *= factor;
+                if (obj.lines) obj.lines.forEach(l => { l.x *= factor; l.y *= factor; l.width *= factor; l.height *= factor; });
+            };
+            Object.values(annotationsData).flat().forEach(reescalarCaja);
+            Object.values(notasData).flat().forEach(reescalarCaja);
+            Object.values(highlightsData).flat().forEach(reescalarCaja);
+
+            scale = nuevaEscala;
+            actualizarIndicadorZoom();
+            queueRenderPage(pageNum);
+        }
+
+        function snapshotEstadoActual() {
+            return {
                 annotations: JSON.parse(JSON.stringify(annotationsData)),
                 notas: JSON.parse(JSON.stringify(notasData)),
                 highlights: JSON.parse(JSON.stringify(highlightsData))
-            });
+            };
+        }
+
+        function saveUndoState() {
+            undoStack.push(snapshotEstadoActual());
             if (undoStack.length > MAX_UNDO) undoStack.shift();
+            redoStack = []; // cualquier acción nueva invalida el historial de "rehacer"
+            actualizarBotonesHistorial();
         }
 
         function undo() {
             if (undoStack.length === 0) return;
+            redoStack.push(snapshotEstadoActual());
             const prev = undoStack.pop();
             annotationsData = prev.annotations;
             notasData = prev.notas;
@@ -905,7 +1014,82 @@
             restaurarAnotaciones(pageNum);
             renderNotas(pageNum);
             renderHighlights(pageNum);
+            actualizarBotonesHistorial();
             showNotification('Deshecho', 'info');
+        }
+
+        function redo() {
+            if (redoStack.length === 0) return;
+            undoStack.push(snapshotEstadoActual());
+            const next = redoStack.pop();
+            annotationsData = next.annotations;
+            notasData = next.notas;
+            highlightsData = next.highlights;
+            restaurarAnotaciones(pageNum);
+            renderNotas(pageNum);
+            renderHighlights(pageNum);
+            actualizarBotonesHistorial();
+            showNotification('Rehecho', 'info');
+        }
+
+        function actualizarBotonesHistorial() {
+            const btnUndo = document.getElementById('btnUndo');
+            const btnRedo = document.getElementById('btnRedo');
+            if (btnUndo) btnUndo.disabled = undoStack.length === 0;
+            if (btnRedo) btnRedo.disabled = redoStack.length === 0;
+        }
+
+        // ============================================================
+        // FUSIONAR RECTS SOLAPADOS/ADYACENTES POR LÍNEA
+        // getClientRects() de una selección devuelve un rect por cada
+        // fragmento de texto (span) que toca, y pdf.js aplica una
+        // transformación (scaleX) a cada span para justificar el texto.
+        // Esto hace que fragmentos consecutivos de una misma línea se
+        // solapen unos px entre sí. Si dibujamos un rectángulo
+        // semitransparente por cada fragmento sin fusionarlos, las
+        // zonas de solape se ven más oscuras/duplicadas: el resaltado
+        // "se sobrepone" sobre sí mismo. Agrupamos por línea (misma y/
+        // height aprox.) y fusionamos los tramos que se tocan o se
+        // solapan en un único rectángulo continuo por línea.
+        // ============================================================
+        function mergeLineRects(rects) {
+            if (!rects || rects.length <= 1) return rects ? rects.slice() : [];
+
+            const LINE_TOLERANCE = 2; // px de tolerancia para considerar "misma línea"
+            const sorted = rects.slice().sort((a, b) => a.y - b.y || a.x - b.x);
+
+            const lineGroups = [];
+            sorted.forEach(r => {
+                let group = lineGroups.find(g =>
+                    Math.abs(g.y - r.y) <= LINE_TOLERANCE &&
+                    Math.abs(g.height - r.height) <= LINE_TOLERANCE
+                );
+                if (!group) { group = { y: r.y, height: r.height, items: [] }; lineGroups.push(group); }
+                group.items.push(r);
+            });
+
+            const merged = [];
+            lineGroups.forEach(group => {
+                const items = group.items.sort((a, b) => a.x - b.x);
+                let current = null;
+                items.forEach(r => {
+                    if (!current) { current = { x: r.x, y: r.y, width: r.width, height: r.height }; return; }
+                    const currentRight = current.x + current.width;
+                    // Se solapan o son contiguos (tolerancia de 1.5px por redondeo de subpíxel)
+                    if (r.x <= currentRight + 1.5) {
+                        const newRight = Math.max(currentRight, r.x + r.width);
+                        current.width = newRight - current.x;
+                        current.y = Math.min(current.y, r.y);
+                        current.height = Math.max(current.height, r.height);
+                    } else {
+                        merged.push(current);
+                        current = { x: r.x, y: r.y, width: r.width, height: r.height };
+                    }
+                });
+                if (current) merged.push(current);
+            });
+
+            return merged;
         }
 
         // ============================================================
@@ -913,6 +1097,9 @@
         // Ahora usa getClientRects() para obtener SOLO los rectángulos
         // de las líneas que CONTIENEN texto seleccionado, evitando
         // abarcar palabras completas no seleccionadas en la misma fila.
+        // Los fragmentos de una misma línea se fusionan (mergeLineRects)
+        // para que el resaltado/tachado no se dibuje por duplicado ni
+        // se superponga sobre sí mismo.
         // ============================================================
         function obtenerRectsDeSeleccion() {
             const selection = window.getSelection();
@@ -923,17 +1110,19 @@
             const rects = range.getClientRects();
             const viewerRect = annotationsLayer.getBoundingClientRect();
 
-            const lineRects = [];
+            const rawRects = [];
             for (let i = 0; i < rects.length; i++) {
                 const r = rects[i];
                 if (r.width === 0 || r.height === 0) continue;
-                lineRects.push({
+                rawRects.push({
                     x: r.left - viewerRect.left,
                     y: r.top - viewerRect.top,
                     width: r.width,
                     height: r.height
                 });
             }
+
+            const lineRects = mergeLineRects(rawRects);
 
             if (lineRects.length === 0) return null;
 
@@ -968,7 +1157,8 @@
                 const txt = window.getSelection().toString().trim();
                 if (txt !== '') { e.preventDefault(); aplicarCorreccion(); }
             }
-            if (e.ctrlKey && e.key === 'z') { e.preventDefault(); undo(); }
+            if (e.ctrlKey && !e.shiftKey && e.key.toLowerCase() === 'z') { e.preventDefault(); undo(); }
+            if ((e.ctrlKey && e.shiftKey && e.key.toLowerCase() === 'z') || (e.ctrlKey && e.key.toLowerCase() === 'y')) { e.preventDefault(); redo(); }
             if (e.key === 'Escape') {
                 const panel = document.getElementById('notaEditPanel');
                 if (panel.style.display === 'flex') cerrarEditorNota();
