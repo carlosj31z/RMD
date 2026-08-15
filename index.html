@@ -185,6 +185,7 @@
         .btn-apply { background: var(--accent-blue); color: #fff; border-color: var(--accent-blue-dark); }
         .btn-continue { background: var(--accent-amber); color: #1a1300; border-color: var(--accent-amber-dark); }
         .btn-fill-author { background: var(--accent-blue); color: #fff; border-color: var(--accent-blue-dark); }
+        .btn-delete-confirm { background: var(--accent-red); color: #fff; border-color: var(--accent-red-dark); }
 
         .toolbar.minimized .btn-preview .btn-text { display: none; }
         .toolbar.minimized .btn-preview { padding: 5px 10px; font-size: 10px; gap: 3px; }
@@ -322,10 +323,18 @@
         #the-canvas { display: block; }
 
         #text-layer { position: absolute; left: 0; top: 0; right: 0; bottom: 0; overflow: hidden; line-height: 1; z-index: 2; }
-        #text-layer > span { color: transparent; position: absolute; white-space: pre; cursor: text; transform-origin: 0% 0%; user-select: text; -webkit-user-select: text; }
-        #text-layer ::selection { background: rgba(10,110,209,0.35) !important; color: transparent !important; }
+        #text-layer > span { color: transparent; position: absolute; white-space: pre; cursor: text; transform-origin: 0% 0%; }
+        #text-layer > span::selection,
+        #text-layer > br::selection { background: transparent; }
+        #text-layer { user-select: text; -webkit-user-select: text; }
 
         #annotations-layer { position: absolute; left: 0; top: 0; right: 0; bottom: 0; pointer-events: none; z-index: 3; }
+        /* Capa de selección propia: dibuja UN solo rectángulo fusionado por línea
+           (ver mergeLineRects) en vez de depender de ::selection nativo, que pinta
+           un rectángulo por cada span y se solapa por el scaleX que aplica pdf.js
+           al justificar texto. */
+        #selection-overlay { position: absolute; left: 0; top: 0; right: 0; bottom: 0; pointer-events: none; z-index: 2; }
+        .selection-rect { position: absolute; background: rgba(10,110,209,0.35); border-radius: 1px; }
 
         .highlight-mark { position: absolute; z-index: 3; pointer-events: auto; }
         .highlight-rect { position: absolute; background: rgba(255, 0, 0, 0.42); border-radius: 2px; pointer-events: none; }
@@ -601,6 +610,18 @@
         </div>
     </div>
 
+    <div class="confirm-modal-overlay" id="genericConfirmModal">
+        <div class="confirm-modal">
+            <div class="warning-icon" id="genericConfirmIcon">⚠️</div>
+            <h3 id="genericConfirmTitle">¿Confirmar acción?</h3>
+            <p id="genericConfirmText"></p>
+            <div class="btn-group">
+                <button class="btn btn-cancel" id="genericConfirmCancelBtn"><i class="fa-solid fa-times"></i> Cancelar</button>
+                <button class="btn btn-delete-confirm" id="genericConfirmAcceptBtn"><i class="fa-solid fa-trash"></i> Eliminar</button>
+            </div>
+        </div>
+    </div>
+
     <div class="nota-edit-panel" id="notaEditPanel">
         <div class="nota-edit-panel-title"><i class="fa-solid fa-pen"></i> Editar nota</div>
         <textarea class="nota-edit-textarea" id="notaEditTextarea" placeholder="Escribe el texto de la nota..."></textarea>
@@ -622,6 +643,7 @@
                 <div class="viewer-loading" id="viewerLoading"><i class="fa-solid fa-spinner fa-spin"></i></div>
                 <canvas id="the-canvas"></canvas>
                 <div id="text-layer"></div>
+                <div id="selection-overlay"></div>
                 <div id="annotations-layer"></div>
             </div>
         </div>
@@ -723,6 +745,7 @@
         let pdfDoc = null, pageNum = 1, pageRendering = false, pageNumPending = null, scale = 1.5;
         let canvas = document.getElementById('the-canvas'), ctx = canvas.getContext('2d');
         let textLayer = document.getElementById('text-layer'), annotationsLayer = document.getElementById('annotations-layer');
+        let selectionOverlay = document.getElementById('selection-overlay');
 
         let annotationsData = {};
         let notasData = {};
@@ -752,6 +775,39 @@
         const txtElaborado = document.getElementById('txtElaborado');
 
         let pendingCorrection = null;
+
+        // ============================================================
+        // MODAL DE CONFIRMACIÓN PROPIO (reemplaza confirm() nativo)
+        // El diálogo confirm() del navegador no respeta el tema oscuro
+        // de la app. Esta función muestra un modal con el mismo estilo
+        // que el resto de la interfaz y devuelve una Promise<boolean>,
+        // para poder usarse como: if (await confirmarAccion(...)) { ... }
+        // ============================================================
+        const genericConfirmModal = document.getElementById('genericConfirmModal');
+        const genericConfirmTitle = document.getElementById('genericConfirmTitle');
+        const genericConfirmText = document.getElementById('genericConfirmText');
+        const genericConfirmAcceptBtn = document.getElementById('genericConfirmAcceptBtn');
+        const genericConfirmCancelBtn = document.getElementById('genericConfirmCancelBtn');
+        let _confirmResolver = null;
+
+        function confirmarAccion(mensaje, opciones = {}) {
+            const { titulo = '¿Confirmar acción?', textoBoton = 'Eliminar', icono = '⚠️' } = opciones;
+            genericConfirmTitle.textContent = titulo;
+            genericConfirmText.textContent = mensaje;
+            genericConfirmAcceptBtn.innerHTML = '<i class="fa-solid fa-trash"></i> ' + textoBoton;
+            document.getElementById('genericConfirmIcon').textContent = icono;
+            genericConfirmModal.style.display = 'flex';
+            return new Promise((resolve) => { _confirmResolver = resolve; });
+        }
+
+        function cerrarConfirmModal(resultado) {
+            genericConfirmModal.style.display = 'none';
+            if (_confirmResolver) { _confirmResolver(resultado); _confirmResolver = null; }
+        }
+
+        genericConfirmAcceptBtn.addEventListener('click', () => cerrarConfirmModal(true));
+        genericConfirmCancelBtn.addEventListener('click', () => cerrarConfirmModal(false));
+        genericConfirmModal.addEventListener('click', (e) => { if (e.target === genericConfirmModal) cerrarConfirmModal(false); });
 
         const notesWidget = document.getElementById('seccionNotas');
         const notesIcon = document.getElementById('notesIcon');
@@ -927,20 +983,33 @@
                 pageRendering = true;
                 mostrarCargando(true);
                 pdfDoc.getPage(num).then(function(page) {
+                    // Renderizamos el canvas a la resolución real del dispositivo
+                    // (devicePixelRatio), y lo mostramos con CSS al tamaño "lógico"
+                    // de la página. Así el zoom no pierde nitidez: el canvas interno
+                    // siempre tiene más píxeles reales que los que se ven en pantalla.
+                    const outputScale = window.devicePixelRatio || 1;
                     const viewport = page.getViewport({ scale: scale });
-                    canvas.height = viewport.height;
-                    canvas.width = viewport.width;
-                    textLayer.style.height = viewport.height + "px";
-                    textLayer.style.width = viewport.width + "px";
-                    annotationsLayer.style.height = viewport.height + "px";
-                    annotationsLayer.style.width = viewport.width + "px";
 
-                    const renderTask = page.render({ canvasContext: ctx, viewport: viewport });
+                    canvas.width = Math.floor(viewport.width * outputScale);
+                    canvas.height = Math.floor(viewport.height * outputScale);
+                    canvas.style.width = Math.floor(viewport.width) + "px";
+                    canvas.style.height = Math.floor(viewport.height) + "px";
+
+                    const transform = outputScale !== 1 ? [outputScale, 0, 0, outputScale, 0, 0] : null;
+
+                    textLayer.style.width = Math.floor(viewport.width) + "px";
+                    textLayer.style.height = Math.floor(viewport.height) + "px";
+                    selectionOverlay.style.width = Math.floor(viewport.width) + "px";
+                    selectionOverlay.style.height = Math.floor(viewport.height) + "px";
+                    annotationsLayer.style.width = Math.floor(viewport.width) + "px";
+                    annotationsLayer.style.height = Math.floor(viewport.height) + "px";
+
+                    const renderTask = page.render({ canvasContext: ctx, viewport: viewport, transform: transform });
                     renderTask.promise.then(function() {
                         textLayer.innerHTML = '';
                         page.getTextContent().then(function(textContent) {
                             pdfjsLib.renderTextLayer({ textContent, container: textLayer, viewport, textDivs: [] });
-                            textLayer.querySelectorAll('span').forEach(span => { span.style.userSelect = 'text'; span.style.webkitUserSelect = 'text'; span.style.cursor = 'text'; });
+                            textLayer.querySelectorAll('span').forEach(span => { span.style.cursor = 'text'; });
                         });
                         restaurarAnotaciones(num);
                         renderNotas(num);
@@ -1093,10 +1162,10 @@
         }
 
         // ============================================================
-        // OBTENER RECTS DE SELECCIÓN - CORREGIDO
-        // Ahora usa getClientRects() para obtener SOLO los rectángulos
-        // de las líneas que CONTIENEN texto seleccionado, evitando
-        // abarcar palabras completas no seleccionadas en la misma fila.
+        // OBTENER RECTS DE SELECCIÓN
+        // Usa getClientRects() para obtener SOLO los rectángulos de las
+        // líneas que CONTIENEN texto seleccionado, evitando abarcar
+        // palabras completas no seleccionadas en la misma fila.
         // Los fragmentos de una misma línea se fusionan (mergeLineRects)
         // para que el resaltado/tachado no se dibuje por duplicado ni
         // se superponga sobre sí mismo.
@@ -1142,13 +1211,65 @@
                 height: maxY - minY
             };
 
-            selection.removeAllRanges();
             return { texto: textoSeleccionado, overall, lines: lineRects };
         }
 
+        // ============================================================
+        // SELECCIÓN VISUAL PROPIA
+        // El navegador dibuja un fondo de selección nativo (::selection)
+        // por cada span de texto individual; como pdf.js aplica un
+        // scaleX a cada span para justificar el texto, esos fondos
+        // quedan ligeramente desalineados y se pintan unos sobre otros,
+        // dando el efecto de selección "duplicada/sobrepuesta". Para
+        // evitarlo, ocultamos el color de selección nativo (ver CSS
+        // #text-layer > span::selection) y dibujamos nosotros mismos
+        // un único rectángulo fusionado por línea (mergeLineRects) en
+        // una capa aparte.
+        // ============================================================
+        function renderSelectionOverlay() {
+            selectionOverlay.innerHTML = '';
+            const selection = window.getSelection();
+            if (!selection || selection.isCollapsed || selection.rangeCount === 0) return;
+            if (!textLayer.contains(selection.anchorNode)) return;
+            const texto = selection.toString();
+            if (!texto || !texto.trim()) return;
+
+            const range = selection.getRangeAt(0);
+            const rects = range.getClientRects();
+            const viewerRect = selectionOverlay.getBoundingClientRect();
+
+            const rawRects = [];
+            for (let i = 0; i < rects.length; i++) {
+                const r = rects[i];
+                if (r.width === 0 || r.height === 0) continue;
+                rawRects.push({
+                    x: r.left - viewerRect.left,
+                    y: r.top - viewerRect.top,
+                    width: r.width,
+                    height: r.height
+                });
+            }
+            const lineRects = mergeLineRects(rawRects);
+            lineRects.forEach(r => {
+                const div = document.createElement('div');
+                div.className = 'selection-rect';
+                div.style.left = r.x + 'px';
+                div.style.top = r.y + 'px';
+                div.style.width = r.width + 'px';
+                div.style.height = r.height + 'px';
+                selectionOverlay.appendChild(div);
+            });
+        }
+
+        function limpiarSelectionOverlay() { selectionOverlay.innerHTML = ''; }
+
+        document.addEventListener('selectionchange', renderSelectionOverlay);
+
         function aplicarCorreccion() {
             const sel = obtenerRectsDeSeleccion();
-            if (!sel) { alert("No has seleccionado nada."); return; }
+            if (!sel) { showNotification('No has seleccionado ningún texto.', 'error'); return; }
+            window.getSelection().removeAllRanges();
+            limpiarSelectionOverlay();
             showReplacementModal(sel.texto, { overall: sel.overall, lines: sel.lines, textoOriginal: sel.texto });
         }
 
@@ -1186,7 +1307,7 @@
         function applyReplacementFromModal() {
             saveUndoState();
             const textoNuevo = sanitizeText(replacementTextInput.value.trim(), false);
-            if (!textoNuevo || !pendingCorrection) { alert("Escribe el texto de reemplazo."); return; }
+            if (!textoNuevo || !pendingCorrection) { showNotification('Escribe el texto de reemplazo.', 'error'); return; }
             if (!annotationsData[pageNum]) annotationsData[pageNum] = [];
             annotationsData[pageNum].push({
                 id: Date.now(),
@@ -1308,8 +1429,9 @@
             };
         }
 
-        function borrarAnotacion(id, num) {
-            if (confirm('¿Eliminar esta corrección?')) {
+        async function borrarAnotacion(id, num) {
+            const ok = await confirmarAccion('¿Eliminar esta corrección?', { titulo: 'Eliminar corrección' });
+            if (ok) {
                 saveUndoState();
                 annotationsData[num] = annotationsData[num].filter(m => m.id !== id);
                 restaurarAnotaciones(num);
@@ -1318,7 +1440,9 @@
 
         function aplicarResaltado() {
             const sel = obtenerRectsDeSeleccion();
-            if (!sel) { alert("Selecciona el texto que deseas resaltar."); return; }
+            if (!sel) { showNotification('Selecciona el texto que deseas resaltar.', 'error'); return; }
+            window.getSelection().removeAllRanges();
+            limpiarSelectionOverlay();
             saveUndoState();
             if (!highlightsData[pageNum]) highlightsData[pageNum] = [];
             highlightsData[pageNum].push({
@@ -1412,7 +1536,7 @@
         });
 
         function crearNotaBase(kind, textoInicial) {
-            if (!pdfDoc) { alert("Primero carga un PDF."); return null; }
+            if (!pdfDoc) { showNotification('Primero carga un PDF.', 'error'); return null; }
             saveUndoState();
             if (!notasData[pageNum]) notasData[pageNum] = [];
             const viewerWidth = annotationsLayer.clientWidth;
@@ -1457,9 +1581,10 @@
                 const delBtn = document.createElement('button');
                 delBtn.className = 'delete-btn delete-nota-btn';
                 delBtn.innerHTML = '<i class="fa-solid fa-xmark"></i>';
-                delBtn.onclick = (e) => {
+                delBtn.onclick = async (e) => {
                     e.stopPropagation();
-                    if (confirm('¿Eliminar esta nota?')) {
+                    const ok = await confirmarAccion('¿Eliminar esta nota?', { titulo: 'Eliminar nota' });
+                    if (ok) {
                         saveUndoState();
                         notasData[num] = notasData[num].filter(n => n.id !== nota.id);
                         renderNotas(num);
@@ -1556,16 +1681,7 @@
         });
 
         // ============================================================
-        // FUNCIÓN DE EXPORTACIÓN PDF - CORREGIDA
-        // 
-        // PROBLEMA 1 CORREGIDO: El recuadro translúcido ahora se dibuja
-        // usando coordenadas POR LÍNEA (lineRects) en lugar de un solo
-        // bounding box grande, para no cubrir texto no seleccionado.
-        //
-        // PROBLEMA 2 CORREGIDO: Si el texto de reemplazo no cabe en el
-        // recuadro original, se EXPANDE automáticamente la altura del
-        // recuadro y se reajusta el texto para que NUNCA se corte ni
-        // se salga de los márgenes.
+        // FUNCIÓN DE EXPORTACIÓN PDF
         // ============================================================
         async function generarPDFModificado() {
             if (!pdfBytesOriginal) throw new Error("No hay PDF cargado.");
@@ -1881,7 +1997,7 @@
                 showNotification('✅ ¡Documento guardado exitosamente!', 'success');
             } catch(e) {
                 console.error(e);
-                alert("Error al generar el PDF: " + e.message);
+                showNotification('Error al generar el PDF: ' + e.message, 'error');
             }
         }
 
@@ -1897,7 +2013,7 @@
                 previewModalOverlay.onclick = (e) => { if (e.target === previewModalOverlay) { previewModalOverlay.style.display = 'none'; cleanUrl(); } };
             } catch(e) {
                 console.error(e);
-                alert("Error al generar la vista previa: " + e.message);
+                showNotification('Error al generar la vista previa: ' + e.message, 'error');
             }
         }
 
