@@ -1756,9 +1756,11 @@
 
                     // Usar el mismo font que usaremos para dibujar
                     const testFont = fontBold;
-                    const words = (m.newText || '').split(' ').filter(w => w.length > 0);
                     let wrappedLines = [];
-                    if (words.length > 0) {
+                    const newTextParagraphs = sanitizeText(m.newText || '', true).split('\n');
+                    newTextParagraphs.forEach(paragraph => {
+                        const words = paragraph.split(' ').filter(w => w.length > 0);
+                        if (words.length === 0) { wrappedLines.push(''); return; }
                         let currentLine = words[0];
                         for (let i = 1; i < words.length; i++) {
                             const testLine = currentLine + ' ' + words[i];
@@ -1770,7 +1772,7 @@
                             }
                         }
                         wrappedLines.push(currentLine);
-                    }
+                    });
 
                     const requiredHeightPdf = wrappedLines.length * pdfLineHeight + paddingPdf * 2;
 
@@ -1888,8 +1890,10 @@
                     const usableW = Math.max(1, wN - paddingNota * 2);
 
                     const lines = [];
-                    const words = (nota.text || '').split(' ').filter(w => w.length > 0);
-                    if (words.length > 0) {
+                    const paragraphs = sanitizeText(nota.text || '', true).split('\n');
+                    paragraphs.forEach(paragraph => {
+                        const words = paragraph.split(' ').filter(w => w.length > 0);
+                        if (words.length === 0) { lines.push(''); return; }
                         let currentLine = words[0];
                         for (let i = 1; i < words.length; i++) {
                             const testLine = currentLine + ' ' + words[i];
@@ -1901,7 +1905,7 @@
                             }
                         }
                         lines.push(currentLine);
-                    }
+                    });
                     const totalTextHeight = lines.length * pdfLineHeight;
                     let yText = yBottom + (hN + totalTextHeight) / 2 - pdfFontSize * 0.85;
 
