@@ -128,6 +128,10 @@
         }
         .toolbar.minimized .file-name { display: none; }
 
+        .autosave-status { font-size: 10px; color: var(--text-muted); white-space: nowrap; }
+        .autosave-status.error { color: var(--accent-amber); }
+        .toolbar.minimized .autosave-status { display: none; }
+
         .author-container {
             display: inline-flex; align-items: center; gap: 6px;
             padding: 6px 12px; background: var(--bg-elevated-2);
@@ -531,6 +535,7 @@
                         <label for="upload" class="custom-file-upload"><i class="fa-solid fa-file-pdf"></i> PDF</label>
                         <input type="file" id="upload" accept="application/pdf" />
                         <span id="fileNameDisplay" class="file-name"></span>
+                        <span id="autosaveStatus" class="autosave-status" title="Tus cambios se guardan automáticamente en este navegador"></span>
                     </div>
                     <div class="author-container" id="authorContainer">
                         <label for="txtElaborado"><i class="fa-solid fa-users"></i> Autor(es):</label>
@@ -903,6 +908,7 @@
                     uploadedImages.push({ id: Date.now() + Math.random(), bytes, type: file.type, name: file.name, url });
                     renderImagesPanel();
                     imagesWidget.classList.add('open');
+                    autoguardarImagenes();
                 };
                 reader.readAsArrayBuffer(file);
             });
@@ -914,6 +920,7 @@
             if (img && img.url) URL.revokeObjectURL(img.url);
             uploadedImages = uploadedImages.filter(i => i.id !== id);
             renderImagesPanel();
+            autoguardarImagenes();
         }
 
         function renderImagesPanel() {
@@ -968,37 +975,48 @@
             mostrarCargando(true);
             try {
                 const arrayBuffer = await file.arrayBuffer();
-                const bytes = new Uint8Array(arrayBuffer);
-                const pdfDoc_ = await pdfjsLib.getDocument(bytes).promise;
-
-                // Solo confirmamos el cambio de documento si pdf.js pudo abrirlo
-                nombreArchivoOriginal = file.name;
-                document.getElementById('fileNameDisplay').textContent = `📎 ${file.name}`;
-                pdfBytesOriginal = bytes;
-                pdfDoc = pdfDoc_;
-                document.getElementById('page_count').textContent = pdfDoc.numPages;
-                document.getElementById('btnGuardar').style.display = 'inline-flex';
-                document.getElementById('btnVistaPrevia').style.display = 'inline-flex';
-                notesWidget.classList.add('visible');
-                imagesWidget.classList.add('visible');
-                closeNotesWidget();
-                annotationsData = {};
-                notasData = {};
-                highlightsData = {};
-                undoStack = [];
-                redoStack = [];
-                actualizarBotonesHistorial();
-                pageNum = 1;
-                scale = 1.5;
-                actualizarIndicadorZoom();
-                ocultarEstadoVacio();
-                await renderPage(pageNum);
+                await abrirDocumento(new Uint8Array(arrayBuffer), file.name, Date.now(), null);
                 showNotification(`PDF cargado: ${pdfDoc.numPages} página(s).`, 'success');
+                pdfPendienteDeAutoguardar = true;
+                autoguardar();
             } catch (err) {
                 console.error('Error al cargar el PDF:', err);
                 mostrarCargando(false);
                 showNotification('No se pudo abrir el PDF. Verifica que el archivo no esté dañado o protegido.', 'error');
             }
+        }
+
+        // estado: null para un documento nuevo, o el estado autoguardado a restaurar.
+        async function abrirDocumento(bytes, nombre, idDocumento, estado) {
+            const pdfDoc_ = await pdfjsLib.getDocument(bytes).promise;
+
+            // Solo confirmamos el cambio de documento si pdf.js pudo abrirlo
+            nombreArchivoOriginal = nombre;
+            idDocumentoActual = idDocumento;
+            document.getElementById('fileNameDisplay').textContent = `📎 ${nombre}`;
+            pdfBytesOriginal = bytes;
+            pdfDoc = pdfDoc_;
+            document.getElementById('page_count').textContent = pdfDoc.numPages;
+            document.getElementById('btnGuardar').style.display = 'inline-flex';
+            document.getElementById('btnVistaPrevia').style.display = 'inline-flex';
+            notesWidget.classList.add('visible');
+            imagesWidget.classList.add('visible');
+            closeNotesWidget();
+            annotationsData = estado ? estado.annotations : {};
+            notasData = estado ? estado.notas : {};
+            highlightsData = estado ? estado.highlights : {};
+            undoStack = [];
+            redoStack = [];
+            actualizarBotonesHistorial();
+            pageNum = estado ? Math.min(Math.max(1, estado.pageNum || 1), pdfDoc.numPages) : 1;
+            scale = estado && estado.scale ? estado.scale : 1.5;
+            if (estado) {
+                txtNotasAdicionales.value = estado.notasAdicionales || '';
+                txtElaborado.value = estado.elaborado || '';
+            }
+            actualizarIndicadorZoom();
+            ocultarEstadoVacio();
+            await renderPage(pageNum);
         }
 
         function renderPage(num) {
@@ -2056,6 +2074,150 @@
         const styleSheet = document.createElement('style');
         styleSheet.textContent = `@keyframes slideDown { from { transform: translateY(-14px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }`;
         document.head.appendChild(styleSheet);
+
+        // ============================================================
+        // AUTOGUARDADO EN EL NAVEGADOR (IndexedDB)
+        // Guarda el PDF, las anotaciones, las imágenes y los campos de
+        // texto, y los recupera al volver a abrir la página.
+        // ============================================================
+        const AUTOSAVE_DB = 'rmd-autoguardado';
+        const AUTOSAVE_STORE = 'sesion';
+        let autosaveDbPromise = null;
+        let idDocumentoActual = null;
+        let ultimoEstadoAutoguardado = null;
+        let pdfPendienteDeAutoguardar = false;
+        let avisoFalloAutoguardadoMostrado = false;
+
+        function abrirAutosaveDB() {
+            if (!autosaveDbPromise) {
+                autosaveDbPromise = new Promise((resolve, reject) => {
+                    const req = indexedDB.open(AUTOSAVE_DB, 1);
+                    req.onupgradeneeded = () => req.result.createObjectStore(AUTOSAVE_STORE);
+                    req.onsuccess = () => resolve(req.result);
+                    req.onerror = () => reject(req.error);
+                });
+                autosaveDbPromise.catch(() => { autosaveDbPromise = null; });
+            }
+            return autosaveDbPromise;
+        }
+
+        async function autosaveLeer() {
+            const db = await abrirAutosaveDB();
+            return new Promise((resolve, reject) => {
+                const tx = db.transaction(AUTOSAVE_STORE, 'readonly');
+                const store = tx.objectStore(AUTOSAVE_STORE);
+                const pdf = store.get('pdf'), estado = store.get('estado'), imagenes = store.get('imagenes');
+                tx.oncomplete = () => resolve({ pdf: pdf.result, estado: estado.result, imagenes: imagenes.result });
+                tx.onerror = tx.onabort = () => reject(tx.error);
+            });
+        }
+
+        async function autosaveEscribir(valores) {
+            const db = await abrirAutosaveDB();
+            return new Promise((resolve, reject) => {
+                const tx = db.transaction(AUTOSAVE_STORE, 'readwrite');
+                const store = tx.objectStore(AUTOSAVE_STORE);
+                Object.entries(valores).forEach(([clave, valor]) => store.put(valor, clave));
+                tx.oncomplete = () => resolve();
+                tx.onerror = tx.onabort = () => reject(tx.error);
+            });
+        }
+
+        function estadoParaAutoguardar() {
+            return JSON.stringify({
+                id: idDocumentoActual,
+                annotations: annotationsData,
+                notas: notasData,
+                highlights: highlightsData,
+                scale,
+                pageNum,
+                notasAdicionales: txtNotasAdicionales.value,
+                elaborado: txtElaborado.value
+            });
+        }
+
+        function mostrarEstadoAutoguardado(ok, err) {
+            const el = document.getElementById('autosaveStatus');
+            if (ok) {
+                const hora = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+                el.textContent = `✓ Guardado ${hora}`;
+                el.classList.remove('error');
+                return;
+            }
+            console.warn('No se pudo autoguardar:', err);
+            el.textContent = '⚠ Sin autoguardado';
+            el.classList.add('error');
+            if (!avisoFalloAutoguardadoMostrado) {
+                avisoFalloAutoguardadoMostrado = true;
+                showNotification('No se pudo guardar automáticamente en este navegador. Descarga el PDF para no perder cambios.', 'error');
+            }
+        }
+
+        async function autoguardar() {
+            if (!pdfBytesOriginal) return;
+            const json = estadoParaAutoguardar();
+            if (json === ultimoEstadoAutoguardado && !pdfPendienteDeAutoguardar) return;
+            // El estado viaja en la misma transacción que su PDF, así nunca
+            // queda guardado un estado de un documento con el PDF de otro.
+            const valores = { estado: json };
+            if (pdfPendienteDeAutoguardar) {
+                valores.pdf = { id: idDocumentoActual, bytes: pdfBytesOriginal, nombre: nombreArchivoOriginal };
+            }
+            ultimoEstadoAutoguardado = json;
+            pdfPendienteDeAutoguardar = false;
+            try {
+                await autosaveEscribir(valores);
+                mostrarEstadoAutoguardado(true);
+            } catch (err) {
+                if (ultimoEstadoAutoguardado === json) ultimoEstadoAutoguardado = null;
+                if (valores.pdf && valores.pdf.id === idDocumentoActual) pdfPendienteDeAutoguardar = true;
+                mostrarEstadoAutoguardado(false, err);
+            }
+        }
+
+        async function autoguardarImagenes() {
+            try {
+                await autosaveEscribir({ imagenes: uploadedImages.map(({ bytes, type, name }) => ({ bytes, type, name })) });
+            } catch (err) {
+                mostrarEstadoAutoguardado(false, err);
+            }
+        }
+
+        async function restaurarAutoguardado() {
+            let datos;
+            try {
+                datos = await autosaveLeer();
+            } catch (err) {
+                console.warn('No se pudo leer el autoguardado:', err);
+                return;
+            }
+            if (datos.imagenes && datos.imagenes.length && !uploadedImages.length) {
+                uploadedImages = datos.imagenes.map(img => ({
+                    ...img,
+                    id: Date.now() + Math.random(),
+                    url: URL.createObjectURL(new Blob([img.bytes], { type: img.type }))
+                }));
+                renderImagesPanel();
+            }
+            if (!datos.pdf || pdfBytesOriginal) return;
+            mostrarCargando(true);
+            try {
+                const estado = datos.estado ? JSON.parse(datos.estado) : null;
+                const estadoValido = estado && estado.id === datos.pdf.id ? estado : null;
+                await abrirDocumento(datos.pdf.bytes, datos.pdf.nombre, datos.pdf.id, estadoValido);
+                ultimoEstadoAutoguardado = estadoParaAutoguardar();
+                mostrarEstadoAutoguardado(true);
+                showNotification('Se recuperó tu último documento con sus apuntes.', 'info');
+            } catch (err) {
+                console.warn('No se pudo restaurar el autoguardado:', err);
+                mostrarCargando(false);
+            }
+        }
+
+        setInterval(autoguardar, 3000);
+        document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'hidden') autoguardar(); });
+        window.addEventListener('pagehide', autoguardar);
+        restaurarAutoguardado();
     </script>
 </body>
 </html>
