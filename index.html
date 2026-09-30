@@ -677,11 +677,34 @@
     <script>
         pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.worker.min.js';
 
+        // Las fuentes estándar de pdf-lib (Helvetica) solo codifican WinAnsi:
+        // ASCII imprimible, Latin-1 (0xA0-0xFF) y estos caracteres extra.
+        const WINANSI_EXTRA = 'ŒœŠšŸŽžƒˆ˜–—‘’‚“”„†‡•…‰‹›€™';
+        const REEMPLAZOS_PDF = {
+            '≤': '<=', '≥': '>=', '≠': '!=', '→': '->', '←': '<-', '⇒': '=>',
+            '✓': 'v', '✔': 'v', '✗': 'x', '✘': 'x', '−': '-', '‐': '-', '‑': '-',
+            '′': "'", '″': '"'
+        };
+
+        function esWinAnsi(ch) {
+            const c = ch.codePointAt(0);
+            return (c >= 0x20 && c <= 0x7e) || (c >= 0xa0 && c <= 0xff) || WINANSI_EXTRA.includes(ch);
+        }
+
+        function aWinAnsi(ch) {
+            if (esWinAnsi(ch)) return ch;
+            if (REEMPLAZOS_PDF[ch]) return REEMPLAZOS_PDF[ch];
+            if (/\s/.test(ch)) return ' ';
+            const base = ch.normalize('NFD').replace(/\p{M}/gu, '');
+            if (base && Array.from(base).every(esWinAnsi)) return base;
+            return /[\p{M}\p{Cc}\p{Cf}\p{Emoji_Modifier}]/u.test(ch) ? '' : '?';
+        }
+
         function sanitizeText(texto, conservarSaltos = false) {
             if (!texto) return '';
-            let limpio = texto.replace(/\r\n/g, '\n').replace(/\r/g, '\n');
+            let limpio = texto.replace(/\r\n?/g, '\n').normalize('NFC');
             if (!conservarSaltos) limpio = limpio.replace(/\n/g, ' ');
-            return limpio;
+            return Array.from(limpio).map(ch => ch === '\n' ? ch : aWinAnsi(ch)).join('');
         }
 
         function measureLines(ctx, text, maxWidth) {
